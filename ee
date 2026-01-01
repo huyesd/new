@@ -47,6 +47,19 @@ function Library:CreateWindow(config)
 	MainCorner.CornerRadius = UDim.new(0.02, 0)
 	MainCorner.Parent = MainFrame
 	
+	local UIScale = Instance.new("UIScale")
+	UIScale.Parent = MainFrame
+	
+	local function UpdateScale()
+		local viewportSize = workspace.CurrentCamera.ViewportSize
+		local baseSize = Vector2.new(1920, 1080)
+		local scale = math.min(viewportSize.X / baseSize.X, viewportSize.Y / baseSize.Y)
+		UIScale.Scale = math.clamp(scale, 0.5, 1.5)
+	end
+	
+	UpdateScale()
+	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(UpdateScale)
+	
 	local dragging, dragInput, dragStart, startPos
 	MainFrame.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 then
