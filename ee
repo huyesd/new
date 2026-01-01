@@ -1,18 +1,67 @@
--- Modern Settings GUI Library
--- Replicates the clean dark UI style from the reference image
+-- Modern Settings GUI Library - Enhanced Version
+-- Exact theme matching with Color Picker, Sliders, and Keybinds
 
 local Library = {}
 
--- Configuration
+-- Configuration - Exact colors from reference
 local CONFIG = {
-    MainColor = Color3.fromRGB(45, 45, 50),
-    SecondaryColor = Color3.fromRGB(35, 35, 40),
-    AccentColor = Color3.fromRGB(80, 150, 255),
-    TextColor = Color3.fromRGB(220, 220, 220),
-    SubTextColor = Color3.fromRGB(150, 150, 150),
-    ToggleOnColor = Color3.fromRGB(100, 200, 100),
-    ToggleOffColor = Color3.fromRGB(80, 80, 90)
+    MainColor = Color3.fromRGB(28, 28, 30),
+    SecondaryColor = Color3.fromRGB(20, 20, 22),
+    AccentColor = Color3.fromRGB(70, 130, 255),
+    TextColor = Color3.fromRGB(200, 200, 200),
+    SubTextColor = Color3.fromRGB(120, 120, 125),
+    ToggleOnColor = Color3.fromRGB(70, 130, 255),
+    ToggleOffColor = Color3.fromRGB(60, 60, 65),
+    SliderColor = Color3.fromRGB(70, 130, 255),
+    ColorPickerBg = Color3.fromRGB(35, 35, 38)
 }
+
+-- Utility Functions
+local function RGBToHSV(r, g, b)
+    local max = math.max(r, g, b)
+    local min = math.min(r, g, b)
+    local delta = max - min
+    
+    local h, s, v = 0, 0, max
+    
+    if delta > 0 then
+        s = delta / max
+        if max == r then
+            h = ((g - b) / delta) % 6
+        elseif max == g then
+            h = (b - r) / delta + 2
+        else
+            h = (r - g) / delta + 4
+        end
+        h = h / 6
+    end
+    
+    return h, s, v
+end
+
+local function HSVToRGB(h, s, v)
+    local c = v * s
+    local x = c * (1 - math.abs((h * 6) % 2 - 1))
+    local m = v - c
+    
+    local r, g, b
+    
+    if h < 1/6 then
+        r, g, b = c, x, 0
+    elseif h < 2/6 then
+        r, g, b = x, c, 0
+    elseif h < 3/6 then
+        r, g, b = 0, c, x
+    elseif h < 4/6 then
+        r, g, b = 0, x, c
+    elseif h < 5/6 then
+        r, g, b = x, 0, c
+    else
+        r, g, b = c, 0, x
+    end
+    
+    return r + m, g + m, b + m
+end
 
 -- Create ScreenGui
 function Library:CreateWindow(title)
@@ -25,13 +74,12 @@ function Library:CreateWindow(title)
     -- Main Frame
     local MainFrame = Instance.new("Frame")
     MainFrame.Name = "MainFrame"
-    MainFrame.Size = UDim2.new(0, 540, 0, 380)
-    MainFrame.Position = UDim2.new(0.5, -270, 0.5, -190)
+    MainFrame.Size = UDim2.new(0, 700, 0, 420)
+    MainFrame.Position = UDim2.new(0.5, -350, 0.5, -210)
     MainFrame.BackgroundColor3 = CONFIG.MainColor
     MainFrame.BorderSizePixel = 0
     MainFrame.Parent = ScreenGui
 
-    -- Add corner radius
     local Corner = Instance.new("UICorner")
     Corner.CornerRadius = UDim.new(0, 6)
     Corner.Parent = MainFrame
@@ -48,7 +96,6 @@ function Library:CreateWindow(title)
     TopCorner.CornerRadius = UDim.new(0, 6)
     TopCorner.Parent = TopBar
 
-    -- Fix bottom corners of top bar
     local TopBarFix = Instance.new("Frame")
     TopBarFix.Size = UDim2.new(1, 0, 0, 6)
     TopBarFix.Position = UDim2.new(0, 0, 1, -6)
@@ -59,7 +106,7 @@ function Library:CreateWindow(title)
     -- Title
     local Title = Instance.new("TextLabel")
     Title.Name = "Title"
-    Title.Size = UDim2.new(0, 200, 1, 0)
+    Title.Size = UDim2.new(0, 300, 1, 0)
     Title.Position = UDim2.new(0, 50, 0, 0)
     Title.BackgroundTransparency = 1
     Title.Text = title or "aimbot / visuals / world / misc / config"
@@ -69,7 +116,7 @@ function Library:CreateWindow(title)
     Title.Font = Enum.Font.Gotham
     Title.Parent = TopBar
 
-    -- Logo/Icon
+    -- Logo
     local Logo = Instance.new("TextLabel")
     Logo.Size = UDim2.new(0, 30, 0, 30)
     Logo.Position = UDim2.new(0, 10, 0, 2.5)
@@ -206,7 +253,6 @@ function Library:CreateTab(Window, tabName)
 
     table.insert(Window.Tabs, Tab)
     
-    -- Activate first tab
     if #Window.Tabs == 1 then
         TabButton.BackgroundColor3 = CONFIG.MainColor
         TabButton.TextColor3 = CONFIG.TextColor
@@ -236,26 +282,15 @@ function Library:CreateToggle(Tab, text, default, callback)
     ToggleLabel.Parent = ToggleFrame
 
     local ToggleButton = Instance.new("TextButton")
-    ToggleButton.Size = UDim2.new(0, 35, 0, 18)
-    ToggleButton.Position = UDim2.new(1, -35, 0.5, -9)
+    ToggleButton.Size = UDim2.new(0, 14, 0, 14)
+    ToggleButton.Position = UDim2.new(1, -14, 0.5, -7)
     ToggleButton.BackgroundColor3 = default and CONFIG.ToggleOnColor or CONFIG.ToggleOffColor
     ToggleButton.Text = ""
     ToggleButton.Parent = ToggleFrame
 
     local ToggleCorner = Instance.new("UICorner")
-    ToggleCorner.CornerRadius = UDim.new(1, 0)
+    ToggleCorner.CornerRadius = UDim.new(0, 3)
     ToggleCorner.Parent = ToggleButton
-
-    local ToggleCircle = Instance.new("Frame")
-    ToggleCircle.Size = UDim2.new(0, 14, 0, 14)
-    ToggleCircle.Position = default and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)
-    ToggleCircle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    ToggleCircle.BorderSizePixel = 0
-    ToggleCircle.Parent = ToggleButton
-
-    local CircleCorner = Instance.new("UICorner")
-    CircleCorner.CornerRadius = UDim.new(1, 0)
-    CircleCorner.Parent = ToggleCircle
 
     local toggled = default
 
@@ -267,10 +302,8 @@ function Library:CreateToggle(Tab, text, default, callback)
         
         if toggled then
             TweenService:Create(ToggleButton, tweenInfo, {BackgroundColor3 = CONFIG.ToggleOnColor}):Play()
-            TweenService:Create(ToggleCircle, tweenInfo, {Position = UDim2.new(1, -16, 0.5, -7)}):Play()
         else
             TweenService:Create(ToggleButton, tweenInfo, {BackgroundColor3 = CONFIG.ToggleOffColor}):Play()
-            TweenService:Create(ToggleCircle, tweenInfo, {Position = UDim2.new(0, 2, 0.5, -7)}):Play()
         end
         
         if callback then
@@ -282,6 +315,335 @@ function Library:CreateToggle(Tab, text, default, callback)
     Tab.Content.CanvasSize = UDim2.new(0, 0, 0, Tab.Content.UIListLayout.AbsoluteContentSize.Y + 20)
 
     return ToggleButton
+end
+
+-- Create Slider
+function Library:CreateSlider(Tab, text, min, max, default, callback)
+    local SliderFrame = Instance.new("Frame")
+    SliderFrame.Name = "Slider"
+    SliderFrame.Size = UDim2.new(1, 0, 0, 45)
+    SliderFrame.BackgroundTransparency = 1
+    SliderFrame.Visible = Tab.Active
+    SliderFrame.Parent = Tab.Content
+
+    local SliderLabel = Instance.new("TextLabel")
+    SliderLabel.Size = UDim2.new(1, -60, 0, 20)
+    SliderLabel.BackgroundTransparency = 1
+    SliderLabel.Text = text
+    SliderLabel.TextColor3 = CONFIG.TextColor
+    SliderLabel.TextSize = 13
+    SliderLabel.TextXAlignment = Enum.TextXAlignment.Left
+    SliderLabel.Font = Enum.Font.Gotham
+    SliderLabel.Parent = SliderFrame
+
+    local SliderValue = Instance.new("TextLabel")
+    SliderValue.Size = UDim2.new(0, 50, 0, 20)
+    SliderValue.Position = UDim2.new(1, -50, 0, 0)
+    SliderValue.BackgroundTransparency = 1
+    SliderValue.Text = tostring(default)
+    SliderValue.TextColor3 = CONFIG.SubTextColor
+    SliderValue.TextSize = 12
+    SliderValue.TextXAlignment = Enum.TextXAlignment.Right
+    SliderValue.Font = Enum.Font.Gotham
+    SliderValue.Parent = SliderFrame
+
+    local SliderBar = Instance.new("Frame")
+    SliderBar.Name = "SliderBar"
+    SliderBar.Size = UDim2.new(1, 0, 0, 4)
+    SliderBar.Position = UDim2.new(0, 0, 0, 28)
+    SliderBar.BackgroundColor3 = CONFIG.ToggleOffColor
+    SliderBar.BorderSizePixel = 0
+    SliderBar.Parent = SliderFrame
+
+    local SliderBarCorner = Instance.new("UICorner")
+    SliderBarCorner.CornerRadius = UDim.new(1, 0)
+    SliderBarCorner.Parent = SliderBar
+
+    local SliderFill = Instance.new("Frame")
+    SliderFill.Name = "Fill"
+    SliderFill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
+    SliderFill.BackgroundColor3 = CONFIG.SliderColor
+    SliderFill.BorderSizePixel = 0
+    SliderFill.Parent = SliderBar
+
+    local SliderFillCorner = Instance.new("UICorner")
+    SliderFillCorner.CornerRadius = UDim.new(1, 0)
+    SliderFillCorner.Parent = SliderFill
+
+    local dragging = false
+    local value = default
+
+    local function updateSlider(input)
+        local pos = math.clamp((input.Position.X - SliderBar.AbsolutePosition.X) / SliderBar.AbsoluteSize.X, 0, 1)
+        value = math.floor(min + (max - min) * pos)
+        SliderFill.Size = UDim2.new(pos, 0, 1, 0)
+        SliderValue.Text = tostring(value)
+        
+        if callback then
+            callback(value)
+        end
+    end
+
+    SliderBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            updateSlider(input)
+        end
+    end)
+
+    SliderBar.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            updateSlider(input)
+        end
+    end)
+
+    table.insert(Tab.Elements, SliderFrame)
+    Tab.Content.CanvasSize = UDim2.new(0, 0, 0, Tab.Content.UIListLayout.AbsoluteContentSize.Y + 20)
+
+    return SliderFrame
+end
+
+-- Create Color Picker
+function Library:CreateColorPicker(Tab, text, default, callback)
+    default = default or Color3.fromRGB(255, 0, 0)
+    
+    local ColorFrame = Instance.new("Frame")
+    ColorFrame.Name = "ColorPicker"
+    ColorFrame.Size = UDim2.new(1, 0, 0, 30)
+    ColorFrame.BackgroundTransparency = 1
+    ColorFrame.Visible = Tab.Active
+    ColorFrame.Parent = Tab.Content
+
+    local ColorLabel = Instance.new("TextLabel")
+    ColorLabel.Size = UDim2.new(1, -25, 1, 0)
+    ColorLabel.BackgroundTransparency = 1
+    ColorLabel.Text = text
+    ColorLabel.TextColor3 = CONFIG.TextColor
+    ColorLabel.TextSize = 13
+    ColorLabel.TextXAlignment = Enum.TextXAlignment.Left
+    ColorLabel.Font = Enum.Font.Gotham
+    ColorLabel.Parent = ColorFrame
+
+    local ColorDisplay = Instance.new("TextButton")
+    ColorDisplay.Size = UDim2.new(0, 14, 0, 14)
+    ColorDisplay.Position = UDim2.new(1, -14, 0.5, -7)
+    ColorDisplay.BackgroundColor3 = default
+    ColorDisplay.Text = ""
+    ColorDisplay.Parent = ColorFrame
+
+    local ColorCorner = Instance.new("UICorner")
+    ColorCorner.CornerRadius = UDim.new(0, 3)
+    ColorCorner.Parent = ColorDisplay
+
+    -- Color Picker Window
+    local PickerWindow = Instance.new("Frame")
+    PickerWindow.Name = "PickerWindow"
+    PickerWindow.Size = UDim2.new(0, 180, 0, 200)
+    PickerWindow.Position = UDim2.new(1, 10, 0, 0)
+    PickerWindow.BackgroundColor3 = CONFIG.ColorPickerBg
+    PickerWindow.BorderSizePixel = 0
+    PickerWindow.Visible = false
+    PickerWindow.ZIndex = 10
+    PickerWindow.Parent = ColorFrame
+
+    local PickerCorner = Instance.new("UICorner")
+    PickerCorner.CornerRadius = UDim.new(0, 6)
+    PickerCorner.Parent = PickerWindow
+
+    -- Color Canvas
+    local Canvas = Instance.new("ImageButton")
+    Canvas.Size = UDim2.new(1, -50, 1, -50)
+    Canvas.Position = UDim2.new(0, 10, 0, 10)
+    Canvas.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    Canvas.BorderSizePixel = 0
+    Canvas.Image = "rbxassetid://4155801252"
+    Canvas.Parent = PickerWindow
+
+    local CanvasCorner = Instance.new("UICorner")
+    CanvasCorner.CornerRadius = UDim.new(0, 4)
+    CanvasCorner.Parent = Canvas
+
+    -- Hue Selector
+    local HueBar = Instance.new("ImageButton")
+    HueBar.Size = UDim2.new(0, 20, 1, -50)
+    HueBar.Position = UDim2.new(1, -30, 0, 10)
+    HueBar.BackgroundColor3 = Color3.white
+    HueBar.BorderSizePixel = 0
+    HueBar.Image = "rbxassetid://3641079629"
+    HueBar.Parent = PickerWindow
+
+    local HueCorner = Instance.new("UICorner")
+    HueCorner.CornerRadius = UDim.new(0, 4)
+    HueCorner.Parent = HueBar
+
+    -- Copy/Paste Buttons
+    local CopyButton = Instance.new("TextButton")
+    CopyButton.Size = UDim2.new(0.48, -7, 0, 25)
+    CopyButton.Position = UDim2.new(0, 10, 1, -35)
+    CopyButton.BackgroundColor3 = CONFIG.SecondaryColor
+    CopyButton.Text = "Copy"
+    CopyButton.TextColor3 = CONFIG.TextColor
+    CopyButton.TextSize = 11
+    CopyButton.Font = Enum.Font.Gotham
+    CopyButton.Parent = PickerWindow
+
+    local CopyCorner = Instance.new("UICorner")
+    CopyCorner.CornerRadius = UDim.new(0, 4)
+    CopyCorner.Parent = CopyButton
+
+    local PasteButton = Instance.new("TextButton")
+    PasteButton.Size = UDim2.new(0.48, -7, 0, 25)
+    PasteButton.Position = UDim2.new(0.52, 3, 1, -35)
+    PasteButton.BackgroundColor3 = CONFIG.SecondaryColor
+    PasteButton.Text = "Paste"
+    PasteButton.TextColor3 = CONFIG.TextColor
+    PasteButton.TextSize = 11
+    PasteButton.Font = Enum.Font.Gotham
+    PasteButton.Parent = PickerWindow
+
+    local PasteCorner = Instance.new("UICorner")
+    PasteCorner.CornerRadius = UDim.new(0, 4)
+    PasteCorner.Parent = PasteButton
+
+    local h, s, v = RGBToHSV(default.R, default.G, default.B)
+    local copiedColor = default
+
+    local function updateColor(newH, newS, newV)
+        h, s, v = newH or h, newS or s, newV or v
+        local r, g, b = HSVToRGB(h, s, v)
+        local color = Color3.new(r, g, b)
+        
+        ColorDisplay.BackgroundColor3 = color
+        Canvas.BackgroundColor3 = Color3.fromHSV(h, 1, 1)
+        
+        if callback then
+            callback(color)
+        end
+    end
+
+    Canvas.MouseButton1Down:Connect(function()
+        local function update()
+            local mouse = game.Players.LocalPlayer:GetMouse()
+            local x = math.clamp((mouse.X - Canvas.AbsolutePosition.X) / Canvas.AbsoluteSize.X, 0, 1)
+            local y = math.clamp((mouse.Y - Canvas.AbsolutePosition.Y) / Canvas.AbsoluteSize.Y, 0, 1)
+            updateColor(nil, x, 1 - y)
+        end
+        
+        update()
+        local connection
+        connection = game:GetService("RunService").RenderStepped:Connect(function()
+            if not game:GetService("UserInputService"):IsMouseButtonPressed(Enum.UserInputType.MouseButton1) then
+                connection:Disconnect()
+            else
+                update()
+            end
+        end)
+    end)
+
+    HueBar.MouseButton1Down:Connect(function()
+        local function update()
+            local mouse = game.Players.LocalPlayer:GetMouse()
+            local y = math.clamp((mouse.Y - HueBar.AbsolutePosition.Y) / HueBar.AbsoluteSize.Y, 0, 1)
+            updateColor(1 - y, nil, nil)
+        end
+        
+        update()
+        local connection
+        connection = game:GetService("RunService").RenderStepped:Connect(function()
+            if not game:GetService("UserInputService"):IsMouseButtonPressed(Enum.UserInputType.MouseButton1) then
+                connection:Disconnect()
+            else
+                update()
+            end
+        end)
+    end)
+
+    CopyButton.MouseButton1Click:Connect(function()
+        copiedColor = ColorDisplay.BackgroundColor3
+    end)
+
+    PasteButton.MouseButton1Click:Connect(function()
+        local h2, s2, v2 = RGBToHSV(copiedColor.R, copiedColor.G, copiedColor.B)
+        updateColor(h2, s2, v2)
+    end)
+
+    ColorDisplay.MouseButton1Click:Connect(function()
+        PickerWindow.Visible = not PickerWindow.Visible
+    end)
+
+    table.insert(Tab.Elements, ColorFrame)
+    Tab.Content.CanvasSize = UDim2.new(0, 0, 0, Tab.Content.UIListLayout.AbsoluteContentSize.Y + 20)
+
+    return ColorDisplay
+end
+
+-- Create Keybind
+function Library:CreateKeybind(Tab, text, default, callback)
+    local KeybindFrame = Instance.new("Frame")
+    KeybindFrame.Name = "Keybind"
+    KeybindFrame.Size = UDim2.new(1, 0, 0, 30)
+    KeybindFrame.BackgroundTransparency = 1
+    KeybindFrame.Visible = Tab.Active
+    KeybindFrame.Parent = Tab.Content
+
+    local KeybindLabel = Instance.new("TextLabel")
+    KeybindLabel.Size = UDim2.new(1, -80, 1, 0)
+    KeybindLabel.BackgroundTransparency = 1
+    KeybindLabel.Text = text
+    KeybindLabel.TextColor3 = CONFIG.TextColor
+    KeybindLabel.TextSize = 13
+    KeybindLabel.TextXAlignment = Enum.TextXAlignment.Left
+    KeybindLabel.Font = Enum.Font.Gotham
+    KeybindLabel.Parent = KeybindFrame
+
+    local KeybindButton = Instance.new("TextButton")
+    KeybindButton.Size = UDim2.new(0, 70, 0, 22)
+    KeybindButton.Position = UDim2.new(1, -70, 0.5, -11)
+    KeybindButton.BackgroundColor3 = CONFIG.SecondaryColor
+    KeybindButton.Text = default and default.Name or "None"
+    KeybindButton.TextColor3 = CONFIG.TextColor
+    KeybindButton.TextSize = 11
+    KeybindButton.Font = Enum.Font.Gotham
+    KeybindButton.Parent = KeybindFrame
+
+    local KeybindCorner = Instance.new("UICorner")
+    KeybindCorner.CornerRadius = UDim.new(0, 4)
+    KeybindCorner.Parent = KeybindButton
+
+    local currentKey = default
+    local binding = false
+
+    KeybindButton.MouseButton1Click:Connect(function()
+        binding = true
+        KeybindButton.Text = "..."
+        KeybindButton.TextColor3 = CONFIG.AccentColor
+    end)
+
+    game:GetService("UserInputService").InputBegan:Connect(function(input, gameProcessed)
+        if binding then
+            if input.KeyCode ~= Enum.KeyCode.Unknown then
+                currentKey = input.KeyCode
+                KeybindButton.Text = input.KeyCode.Name
+                KeybindButton.TextColor3 = CONFIG.TextColor
+                binding = false
+            end
+        elseif not gameProcessed and input.KeyCode == currentKey then
+            if callback then
+                callback()
+            end
+        end
+    end)
+
+    table.insert(Tab.Elements, KeybindFrame)
+    Tab.Content.CanvasSize = UDim2.new(0, 0, 0, Tab.Content.UIListLayout.AbsoluteContentSize.Y + 20)
+
+    return KeybindButton
 end
 
 -- Create Button
@@ -317,42 +679,6 @@ function Library:CreateButton(Tab, text, callback)
     Tab.Content.CanvasSize = UDim2.new(0, 0, 0, Tab.Content.UIListLayout.AbsoluteContentSize.Y + 20)
 
     return Button
-end
-
--- Create Color Picker
-function Library:CreateColorPicker(Tab, text, default, callback)
-    local ColorFrame = Instance.new("Frame")
-    ColorFrame.Name = "ColorPicker"
-    ColorFrame.Size = UDim2.new(1, 0, 0, 30)
-    ColorFrame.BackgroundTransparency = 1
-    ColorFrame.Visible = Tab.Active
-    ColorFrame.Parent = Tab.Content
-
-    local ColorLabel = Instance.new("TextLabel")
-    ColorLabel.Size = UDim2.new(1, -40, 1, 0)
-    ColorLabel.BackgroundTransparency = 1
-    ColorLabel.Text = text
-    ColorLabel.TextColor3 = CONFIG.TextColor
-    ColorLabel.TextSize = 13
-    ColorLabel.TextXAlignment = Enum.TextXAlignment.Left
-    ColorLabel.Font = Enum.Font.Gotham
-    ColorLabel.Parent = ColorFrame
-
-    local ColorDisplay = Instance.new("TextButton")
-    ColorDisplay.Size = UDim2.new(0, 35, 0, 18)
-    ColorDisplay.Position = UDim2.new(1, -35, 0.5, -9)
-    ColorDisplay.BackgroundColor3 = default or Color3.fromRGB(100, 200, 100)
-    ColorDisplay.Text = ""
-    ColorDisplay.Parent = ColorFrame
-
-    local ColorCorner = Instance.new("UICorner")
-    ColorCorner.CornerRadius = UDim.new(0, 4)
-    ColorCorner.Parent = ColorDisplay
-
-    table.insert(Tab.Elements, ColorFrame)
-    Tab.Content.CanvasSize = UDim2.new(0, 0, 0, Tab.Content.UIListLayout.AbsoluteContentSize.Y + 20)
-
-    return ColorDisplay
 end
 
 return Library
