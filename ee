@@ -640,10 +640,13 @@ return Library
 EXAMPLE USAGE
 ==========================================
 
-local Library = loadstring(game:HttpGet("YOUR_URL_HERE"))()
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/huyesd/new/refs/heads/main/ee"))()
+
+-- Create Library Instance
+local Lib = Library.new()
 
 -- Create Window
-local Window = Library.new():CreateWindow({
+local Window = Lib:CreateWindow({
     Name = "My UI Library"
 })
 
