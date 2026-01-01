@@ -47,6 +47,11 @@ function Library:CreateWindow(config)
 	MainCorner.CornerRadius = UDim.new(0.02, 0)
 	MainCorner.Parent = MainFrame
 	
+	local MainStroke = Instance.new("UIStroke")
+	MainStroke.Color = Color3.fromRGB(30, 30, 30)
+	MainStroke.Thickness = 1
+	MainStroke.Parent = MainFrame
+	
 	local UIScale = Instance.new("UIScale")
 	UIScale.Parent = MainFrame
 	
@@ -97,6 +102,11 @@ function Library:CreateWindow(config)
 	local SidebarCorner = Instance.new("UICorner")
 	SidebarCorner.CornerRadius = UDim.new(0.05, 0)
 	SidebarCorner.Parent = Sidebar
+	
+	local SidebarStroke = Instance.new("UIStroke")
+	SidebarStroke.Color = Color3.fromRGB(25, 25, 25)
+	SidebarStroke.Thickness = 1
+	SidebarStroke.Parent = Sidebar
 	
 	local TabContainer = Instance.new("Frame")
 	TabContainer.Name = "Container"
@@ -168,6 +178,11 @@ function Library:CreateWindow(config)
 		local ContentCorner = Instance.new("UICorner")
 		ContentCorner.CornerRadius = UDim.new(0.04, 0)
 		ContentCorner.Parent = ContentContainer
+		
+		local ContentStroke = Instance.new("UIStroke")
+		ContentStroke.Color = Color3.fromRGB(25, 25, 25)
+		ContentStroke.Thickness = 1
+		ContentStroke.Parent = ContentContainer
 		
 		local ElementLayout = Instance.new("UIListLayout")
 		ElementLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
@@ -298,8 +313,11 @@ function Library:CreateWindow(config)
 			ToggleLabel.Font = Enum.Font.Code
 			ToggleLabel.Text = name
 			ToggleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-			ToggleLabel.TextScaled = true
+			ToggleLabel.TextSize = 12
+			ToggleLabel.TextWrapped = true
+			ToggleLabel.TextTruncate = Enum.TextTruncate.AtEnd
 			ToggleLabel.TextXAlignment = Enum.TextXAlignment.Left
+			ToggleLabel.TextYAlignment = Enum.TextYAlignment.Center
 			ToggleLabel.Parent = ToggleContainer
 			
 			local toggled = default
@@ -371,22 +389,27 @@ function Library:CreateWindow(config)
 			local SliderLabel = Instance.new("TextLabel")
 			SliderLabel.BackgroundTransparency = 1
 			SliderLabel.Position = UDim2.new(0, 0, 0, 0)
-			SliderLabel.Size = UDim2.new(0.852, 0, 0.48, 0)
+			SliderLabel.Size = UDim2.new(0.7, 0, 0.48, 0)
 			SliderLabel.Font = Enum.Font.Code
 			SliderLabel.Text = name
 			SliderLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-			SliderLabel.TextScaled = true
+			SliderLabel.TextSize = 12
+			SliderLabel.TextWrapped = true
+			SliderLabel.TextTruncate = Enum.TextTruncate.AtEnd
 			SliderLabel.TextXAlignment = Enum.TextXAlignment.Left
+			SliderLabel.TextYAlignment = Enum.TextYAlignment.Center
 			SliderLabel.Parent = SliderContainer
 			
 			local ValueLabel = Instance.new("TextLabel")
 			ValueLabel.BackgroundTransparency = 1
-			ValueLabel.Position = UDim2.new(0.877, 0, 0, 0)
-			ValueLabel.Size = UDim2.new(0.134, 0, 0.48, 0)
+			ValueLabel.Position = UDim2.new(0.72, 0, 0, 0)
+			ValueLabel.Size = UDim2.new(0.28, 0, 0.48, 0)
 			ValueLabel.Font = Enum.Font.Code
 			ValueLabel.Text = tostring(default)
 			ValueLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-			ValueLabel.TextScaled = true
+			ValueLabel.TextSize = 12
+			ValueLabel.TextXAlignment = Enum.TextXAlignment.Right
+			ValueLabel.TextYAlignment = Enum.TextYAlignment.Center
 			ValueLabel.Parent = SliderContainer
 			
 			local SliderTrack = Instance.new("Frame")
@@ -480,27 +503,38 @@ function Library:CreateWindow(config)
 			HeaderCorner.CornerRadius = UDim.new(0.1, 0)
 			HeaderCorner.Parent = DropdownHeader
 			
+			local HeaderStroke = Instance.new("UIStroke")
+			HeaderStroke.Color = Color3.fromRGB(40, 40, 40)
+			HeaderStroke.Thickness = 1
+			HeaderStroke.Parent = DropdownHeader
+			
 			local DropdownLabel = Instance.new("TextLabel")
 			DropdownLabel.BackgroundTransparency = 1
 			DropdownLabel.Position = UDim2.new(0.02, 0, 0, 0)
-			DropdownLabel.Size = UDim2.new(0.7, 0, 1, 0)
+			DropdownLabel.Size = UDim2.new(0.55, 0, 1, 0)
 			DropdownLabel.Font = Enum.Font.Code
 			DropdownLabel.Text = name
 			DropdownLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-			DropdownLabel.TextScaled = true
+			DropdownLabel.TextSize = 12
+			DropdownLabel.TextWrapped = true
+			DropdownLabel.TextTruncate = Enum.TextTruncate.AtEnd
 			DropdownLabel.TextXAlignment = Enum.TextXAlignment.Left
+			DropdownLabel.TextYAlignment = Enum.TextYAlignment.Center
 			DropdownLabel.ZIndex = 6
 			DropdownLabel.Parent = DropdownHeader
 			
 			local CurrentValue = Instance.new("TextLabel")
 			CurrentValue.BackgroundTransparency = 1
-			CurrentValue.Position = UDim2.new(0.72, 0, 0, 0)
-			CurrentValue.Size = UDim2.new(0.26, 0, 1, 0)
+			CurrentValue.Position = UDim2.new(0.58, 0, 0, 0)
+			CurrentValue.Size = UDim2.new(0.4, 0, 1, 0)
 			CurrentValue.Font = Enum.Font.Code
 			CurrentValue.Text = default
 			CurrentValue.TextColor3 = Color3.fromRGB(150, 150, 150)
-			CurrentValue.TextScaled = true
+			CurrentValue.TextSize = 12
+			CurrentValue.TextWrapped = true
+			CurrentValue.TextTruncate = Enum.TextTruncate.AtEnd
 			CurrentValue.TextXAlignment = Enum.TextXAlignment.Right
+			CurrentValue.TextYAlignment = Enum.TextYAlignment.Center
 			CurrentValue.ZIndex = 6
 			CurrentValue.Parent = DropdownHeader
 			
@@ -524,6 +558,11 @@ function Library:CreateWindow(config)
 			local ListCorner = Instance.new("UICorner")
 			ListCorner.CornerRadius = UDim.new(0.1, 0)
 			ListCorner.Parent = DropdownList
+			
+			local ListStroke = Instance.new("UIStroke")
+			ListStroke.Color = Color3.fromRGB(40, 40, 40)
+			ListStroke.Thickness = 1
+			ListStroke.Parent = DropdownList
 			
 			local ListLayout = Instance.new("UIListLayout")
 			ListLayout.SortOrder = Enum.SortOrder.LayoutOrder
