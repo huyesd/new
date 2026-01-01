@@ -258,6 +258,11 @@ function Library:CreateWindow(config)
 			local default = config.Default or false
 			local callback = config.Callback or function() end
 			
+			local ToggleObj = {
+				Value = default,
+				ColorPickers = {}
+			}
+			
 			local ToggleContainer = Instance.new("ImageLabel")
 			ToggleContainer.Name = "ToggleContainer"
 			ToggleContainer.BackgroundTransparency = 1
@@ -330,6 +335,7 @@ function Library:CreateWindow(config)
 					Tween(ToggleFrame, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(20, 20, 20)})
 					Tween(Checkmark, TweenInfo.new(0.2), {ImageTransparency = 1})
 				end
+				ToggleObj.Value = toggled
 				callback(toggled)
 			end
 			
@@ -356,12 +362,310 @@ function Library:CreateWindow(config)
 				end
 			end)
 			
-			return {
-				Set = function(value)
-					toggled = value
-					UpdateToggle()
+			function ToggleObj:Set(value)
+				toggled = value
+				UpdateToggle()
+			end
+			
+			function ToggleObj:AddColorPicker(id, cpConfig)
+				cpConfig = cpConfig or {}
+				local title = cpConfig.Title or "Color"
+				local defaultColor = cpConfig.Default or Color3.fromRGB(255, 0, 0)
+				local transparency = cpConfig.Transparency or 0
+				local cpCallback = cpConfig.Callback or function() end
+				
+				local ColorPicker = {
+					Value = defaultColor,
+					Transparency = transparency,
+					Hue = 0,
+					Sat = 1,
+					Val = 1
+				}
+				
+				ToggleObj.ColorPickers[id] = ColorPicker
+				
+				local CPContainer = Instance.new("Frame")
+				CPContainer.Name = "ColorPickerContainer"
+				CPContainer.BackgroundTransparency = 1
+				CPContainer.LayoutOrder = 1
+				CPContainer.Size = UDim2.new(0.1, 0, 0.941, 0)
+				CPContainer.Parent = ToggleContainer
+				
+				local CPButton = Instance.new("TextButton")
+				CPButton.Name = "ColorPickerButton"
+				CPButton.BackgroundColor3 = defaultColor
+				CPButton.BorderSizePixel = 0
+				CPButton.Size = UDim2.new(1, 0, 1, 0)
+				CPButton.Text = ""
+				CPButton.Parent = CPContainer
+				
+				local CPCorner = Instance.new("UICorner")
+				CPCorner.CornerRadius = UDim.new(0.3, 0)
+				CPCorner.Parent = CPButton
+				
+				local CPStroke = Instance.new("UIStroke")
+				CPStroke.Color = Color3.fromRGB(60, 60, 60)
+				CPStroke.Thickness = 1
+				CPStroke.Parent = CPButton
+				
+				local PickerFrame = Instance.new("Frame")
+				PickerFrame.Name = "PickerFrame"
+				PickerFrame.AnchorPoint = Vector2.new(0, 0)
+				PickerFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+				PickerFrame.BorderSizePixel = 0
+				PickerFrame.Position = UDim2.new(0, 0, 1.2, 0)
+				PickerFrame.Size = UDim2.new(0, 180, 0, 200)
+				PickerFrame.Visible = false
+				PickerFrame.ZIndex = 100
+				PickerFrame.Parent = CPContainer
+				
+				local PickerCorner = Instance.new("UICorner")
+				PickerCorner.CornerRadius = UDim.new(0.05, 0)
+				PickerCorner.Parent = PickerFrame
+				
+				local PickerStroke = Instance.new("UIStroke")
+				PickerStroke.Color = Color3.fromRGB(40, 40, 40)
+				PickerStroke.Thickness = 1
+				PickerStroke.Parent = PickerFrame
+				
+				local TitleLabel = Instance.new("TextLabel")
+				TitleLabel.BackgroundTransparency = 1
+				TitleLabel.Position = UDim2.new(0.05, 0, 0.02, 0)
+				TitleLabel.Size = UDim2.new(0.9, 0, 0.1, 0)
+				TitleLabel.Font = Enum.Font.Code
+				TitleLabel.Text = title
+				TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+				TitleLabel.TextSize = 12
+				TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+				TitleLabel.ZIndex = 101
+				TitleLabel.Parent = PickerFrame
+				
+				local HueSatPicker = Instance.new("ImageButton")
+				HueSatPicker.Name = "HueSatPicker"
+				HueSatPicker.BackgroundColor3 = Color3.fromHSV(ColorPicker.Hue, 1, 1)
+				HueSatPicker.BorderSizePixel = 0
+				HueSatPicker.Position = UDim2.new(0.05, 0, 0.15, 0)
+				HueSatPicker.Size = UDim2.new(0.9, 0, 0.5, 0)
+				HueSatPicker.ZIndex = 101
+				HueSatPicker.Parent = PickerFrame
+				
+				local HSCorner = Instance.new("UICorner")
+				HSCorner.CornerRadius = UDim.new(0.05, 0)
+				HSCorner.Parent = HueSatPicker
+				
+				local HSGradient = Instance.new("UIGradient")
+				HSGradient.Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.new(0, 0, 0))
+				HSGradient.Rotation = 90
+				HSGradient.Parent = HueSatPicker
+				
+				local Cursor = Instance.new("Frame")
+				Cursor.Name = "Cursor"
+				Cursor.AnchorPoint = Vector2.new(0.5, 0.5)
+				Cursor.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+				Cursor.BorderSizePixel = 0
+				Cursor.Position = UDim2.new(ColorPicker.Sat, 0, 1 - ColorPicker.Val, 0)
+				Cursor.Size = UDim2.new(0, 8, 0, 8)
+				Cursor.ZIndex = 102
+				Cursor.Parent = HueSatPicker
+				
+				local CursorCorner = Instance.new("UICorner")
+				CursorCorner.CornerRadius = UDim.new(1, 0)
+				CursorCorner.Parent = Cursor
+				
+				local CursorStroke = Instance.new("UIStroke")
+				CursorStroke.Color = Color3.fromRGB(0, 0, 0)
+				CursorStroke.Thickness = 2
+				CursorStroke.Parent = Cursor
+				
+				local HueSlider = Instance.new("Frame")
+				HueSlider.Name = "HueSlider"
+				HueSlider.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+				HueSlider.BorderSizePixel = 0
+				HueSlider.Position = UDim2.new(0.05, 0, 0.7, 0)
+				HueSlider.Size = UDim2.new(0.9, 0, 0, 15)
+				HueSlider.ZIndex = 101
+				HueSlider.Parent = PickerFrame
+				
+				local HueCorner = Instance.new("UICorner")
+				HueCorner.CornerRadius = UDim.new(0.5, 0)
+				HueCorner.Parent = HueSlider
+				
+				local HueGradient = Instance.new("UIGradient")
+				HueGradient.Color = ColorSequence.new({
+					ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)),
+					ColorSequenceKeypoint.new(0.17, Color3.fromRGB(255, 255, 0)),
+					ColorSequenceKeypoint.new(0.33, Color3.fromRGB(0, 255, 0)),
+					ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 255, 255)),
+					ColorSequenceKeypoint.new(0.67, Color3.fromRGB(0, 0, 255)),
+					ColorSequenceKeypoint.new(0.83, Color3.fromRGB(255, 0, 255)),
+					ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 0))
+				})
+				HueGradient.Parent = HueSlider
+				
+				local HueSelector = Instance.new("Frame")
+				HueSelector.Name = "Selector"
+				HueSelector.AnchorPoint = Vector2.new(0.5, 0.5)
+				HueSelector.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+				HueSelector.BorderSizePixel = 0
+				HueSelector.Position = UDim2.new(ColorPicker.Hue, 0, 0.5, 0)
+				HueSelector.Size = UDim2.new(0, 6, 1, 4)
+				HueSelector.ZIndex = 102
+				HueSelector.Parent = HueSlider
+				
+				local HSelectorCorner = Instance.new("UICorner")
+				HSelectorCorner.CornerRadius = UDim.new(0.5, 0)
+				HSelectorCorner.Parent = HueSelector
+				
+				local HSelectorStroke = Instance.new("UIStroke")
+				HSelectorStroke.Color = Color3.fromRGB(0, 0, 0)
+				HSelectorStroke.Thickness = 1
+				HSelectorStroke.Parent = HueSelector
+				
+				local TransparencySlider = Instance.new("Frame")
+				TransparencySlider.Name = "TransparencySlider"
+				TransparencySlider.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+				TransparencySlider.BorderSizePixel = 0
+				TransparencySlider.Position = UDim2.new(0.05, 0, 0.85, 0)
+				TransparencySlider.Size = UDim2.new(0.9, 0, 0, 15)
+				TransparencySlider.ZIndex = 101
+				TransparencySlider.Visible = cpConfig.Transparency ~= nil
+				TransparencySlider.Parent = PickerFrame
+				
+				local TransCorner = Instance.new("UICorner")
+				TransCorner.CornerRadius = UDim.new(0.5, 0)
+				TransCorner.Parent = TransparencySlider
+				
+				local TransGradient = Instance.new("UIGradient")
+				TransGradient.Transparency = NumberSequence.new({
+					NumberSequenceKeypoint.new(0, 0),
+					NumberSequenceKeypoint.new(1, 1)
+				})
+				TransGradient.Parent = TransparencySlider
+				
+				local TransSelector = Instance.new("Frame")
+				TransSelector.Name = "Selector"
+				TransSelector.AnchorPoint = Vector2.new(0.5, 0.5)
+				TransSelector.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+				TransSelector.BorderSizePixel = 0
+				TransSelector.Position = UDim2.new(1 - transparency, 0, 0.5, 0)
+				TransSelector.Size = UDim2.new(0, 6, 1, 4)
+				TransSelector.ZIndex = 102
+				TransSelector.Parent = TransparencySlider
+				
+				local TSelectorCorner = Instance.new("UICorner")
+				TSelectorCorner.CornerRadius = UDim.new(0.5, 0)
+				TSelectorCorner.Parent = TransSelector
+				
+				local TSelectorStroke = Instance.new("UIStroke")
+				TSelectorStroke.Color = Color3.fromRGB(0, 0, 0)
+				TSelectorStroke.Thickness = 1
+				TSelectorStroke.Parent = TransSelector
+				
+				local function UpdateColor()
+					local color = Color3.fromHSV(ColorPicker.Hue, ColorPicker.Sat, ColorPicker.Val)
+					ColorPicker.Value = color
+					CPButton.BackgroundColor3 = color
+					HueSatPicker.BackgroundColor3 = Color3.fromHSV(ColorPicker.Hue, 1, 1)
+					cpCallback(color, ColorPicker.Transparency)
 				end
-			}
+				
+				local hsDragging = false
+				local hueDragging = false
+				local transDragging = false
+				
+				HueSatPicker.InputBegan:Connect(function(input)
+					if input.UserInputType == Enum.UserInputType.MouseButton1 then
+						hsDragging = true
+						local pos = (input.Position - HueSatPicker.AbsolutePosition) / HueSatPicker.AbsoluteSize
+						ColorPicker.Sat = math.clamp(pos.X, 0, 1)
+						ColorPicker.Val = 1 - math.clamp(pos.Y, 0, 1)
+						Cursor.Position = UDim2.new(ColorPicker.Sat, 0, 1 - ColorPicker.Val, 0)
+						UpdateColor()
+					end
+				end)
+				
+				UserInputService.InputChanged:Connect(function(input)
+					if hsDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+						local pos = (input.Position - HueSatPicker.AbsolutePosition) / HueSatPicker.AbsoluteSize
+						ColorPicker.Sat = math.clamp(pos.X, 0, 1)
+						ColorPicker.Val = 1 - math.clamp(pos.Y, 0, 1)
+						Cursor.Position = UDim2.new(ColorPicker.Sat, 0, 1 - ColorPicker.Val, 0)
+						UpdateColor()
+					elseif hueDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+						local pos = math.clamp((input.Position.X - HueSlider.AbsolutePosition.X) / HueSlider.AbsoluteSize.X, 0, 1)
+						ColorPicker.Hue = pos
+						HueSelector.Position = UDim2.new(pos, 0, 0.5, 0)
+						UpdateColor()
+					elseif transDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+						local pos = math.clamp((input.Position.X - TransparencySlider.AbsolutePosition.X) / TransparencySlider.AbsoluteSize.X, 0, 1)
+						ColorPicker.Transparency = 1 - pos
+						TransSelector.Position = UDim2.new(pos, 0, 0.5, 0)
+						UpdateColor()
+					end
+				end)
+				
+				UserInputService.InputEnded:Connect(function(input)
+					if input.UserInputType == Enum.UserInputType.MouseButton1 then
+						hsDragging = false
+						hueDragging = false
+						transDragging = false
+					end
+				end)
+				
+				HueSlider.InputBegan:Connect(function(input)
+					if input.UserInputType == Enum.UserInputType.MouseButton1 then
+						hueDragging = true
+						local pos = math.clamp((input.Position.X - HueSlider.AbsolutePosition.X) / HueSlider.AbsoluteSize.X, 0, 1)
+						ColorPicker.Hue = pos
+						HueSelector.Position = UDim2.new(pos, 0, 0.5, 0)
+						UpdateColor()
+					end
+				end)
+				
+				TransparencySlider.InputBegan:Connect(function(input)
+					if input.UserInputType == Enum.UserInputType.MouseButton1 then
+						transDragging = true
+						local pos = math.clamp((input.Position.X - TransparencySlider.AbsolutePosition.X) / TransparencySlider.AbsoluteSize.X, 0, 1)
+						ColorPicker.Transparency = 1 - pos
+						TransSelector.Position = UDim2.new(pos, 0, 0.5, 0)
+						UpdateColor()
+					end
+				end)
+				
+				CPButton.MouseButton1Click:Connect(function()
+					PickerFrame.Visible = not PickerFrame.Visible
+				end)
+				
+				function ColorPicker:SetValue(hsv, trans)
+					ColorPicker.Hue = hsv.H or hsv.Hue or 0
+					ColorPicker.Sat = hsv.S or hsv.Sat or 1
+					ColorPicker.Val = hsv.V or hsv.Val or 1
+					if trans then
+						ColorPicker.Transparency = trans
+						TransSelector.Position = UDim2.new(1 - trans, 0, 0.5, 0)
+					end
+					Cursor.Position = UDim2.new(ColorPicker.Sat, 0, 1 - ColorPicker.Val, 0)
+					HueSelector.Position = UDim2.new(ColorPicker.Hue, 0, 0.5, 0)
+					UpdateColor()
+				end
+				
+				function ColorPicker:SetValueRGB(color, trans)
+					local h, s, v = color:ToHSV()
+					ColorPicker:SetValue({H = h, S = s, V = v}, trans)
+				end
+				
+				function ColorPicker:OnChanged(func)
+					local oldCallback = cpCallback
+					cpCallback = function(...)
+						oldCallback(...)
+						func(...)
+					end
+				end
+				
+				return ColorPicker
+			end
+			
+			return ToggleObj
 		end
 		
 		function Tab:AddSlider(config)
