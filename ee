@@ -1,0 +1,358 @@
+-- Modern Settings GUI Library
+-- Replicates the clean dark UI style from the reference image
+
+local Library = {}
+
+-- Configuration
+local CONFIG = {
+    MainColor = Color3.fromRGB(45, 45, 50),
+    SecondaryColor = Color3.fromRGB(35, 35, 40),
+    AccentColor = Color3.fromRGB(80, 150, 255),
+    TextColor = Color3.fromRGB(220, 220, 220),
+    SubTextColor = Color3.fromRGB(150, 150, 150),
+    ToggleOnColor = Color3.fromRGB(100, 200, 100),
+    ToggleOffColor = Color3.fromRGB(80, 80, 90)
+}
+
+-- Create ScreenGui
+function Library:CreateWindow(title)
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "ModernSettingsGUI"
+    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    ScreenGui.ResetOnSpawn = false
+    ScreenGui.Parent = game.CoreGui
+
+    -- Main Frame
+    local MainFrame = Instance.new("Frame")
+    MainFrame.Name = "MainFrame"
+    MainFrame.Size = UDim2.new(0, 540, 0, 380)
+    MainFrame.Position = UDim2.new(0.5, -270, 0.5, -190)
+    MainFrame.BackgroundColor3 = CONFIG.MainColor
+    MainFrame.BorderSizePixel = 0
+    MainFrame.Parent = ScreenGui
+
+    -- Add corner radius
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0, 6)
+    Corner.Parent = MainFrame
+
+    -- Top Bar
+    local TopBar = Instance.new("Frame")
+    TopBar.Name = "TopBar"
+    TopBar.Size = UDim2.new(1, 0, 0, 35)
+    TopBar.BackgroundColor3 = CONFIG.SecondaryColor
+    TopBar.BorderSizePixel = 0
+    TopBar.Parent = MainFrame
+
+    local TopCorner = Instance.new("UICorner")
+    TopCorner.CornerRadius = UDim.new(0, 6)
+    TopCorner.Parent = TopBar
+
+    -- Fix bottom corners of top bar
+    local TopBarFix = Instance.new("Frame")
+    TopBarFix.Size = UDim2.new(1, 0, 0, 6)
+    TopBarFix.Position = UDim2.new(0, 0, 1, -6)
+    TopBarFix.BackgroundColor3 = CONFIG.SecondaryColor
+    TopBarFix.BorderSizePixel = 0
+    TopBarFix.Parent = TopBar
+
+    -- Title
+    local Title = Instance.new("TextLabel")
+    Title.Name = "Title"
+    Title.Size = UDim2.new(0, 200, 1, 0)
+    Title.Position = UDim2.new(0, 50, 0, 0)
+    Title.BackgroundTransparency = 1
+    Title.Text = title or "aimbot / visuals / world / misc / config"
+    Title.TextColor3 = CONFIG.SubTextColor
+    Title.TextSize = 12
+    Title.TextXAlignment = Enum.TextXAlignment.Left
+    Title.Font = Enum.Font.Gotham
+    Title.Parent = TopBar
+
+    -- Logo/Icon
+    local Logo = Instance.new("TextLabel")
+    Logo.Size = UDim2.new(0, 30, 0, 30)
+    Logo.Position = UDim2.new(0, 10, 0, 2.5)
+    Logo.BackgroundTransparency = 1
+    Logo.Text = "≡"
+    Logo.TextColor3 = CONFIG.AccentColor
+    Logo.TextSize = 20
+    Logo.Font = Enum.Font.GothamBold
+    Logo.Parent = TopBar
+
+    -- Sidebar
+    local Sidebar = Instance.new("Frame")
+    Sidebar.Name = "Sidebar"
+    Sidebar.Size = UDim2.new(0, 140, 1, -35)
+    Sidebar.Position = UDim2.new(0, 0, 0, 35)
+    Sidebar.BackgroundColor3 = CONFIG.SecondaryColor
+    Sidebar.BorderSizePixel = 0
+    Sidebar.Parent = MainFrame
+
+    local SidebarList = Instance.new("UIListLayout")
+    SidebarList.SortOrder = Enum.SortOrder.LayoutOrder
+    SidebarList.Padding = UDim.new(0, 2)
+    SidebarList.Parent = Sidebar
+
+    -- Content Area
+    local Content = Instance.new("ScrollingFrame")
+    Content.Name = "Content"
+    Content.Size = UDim2.new(1, -140, 1, -45)
+    Content.Position = UDim2.new(0, 140, 0, 40)
+    Content.BackgroundColor3 = CONFIG.MainColor
+    Content.BorderSizePixel = 0
+    Content.ScrollBarThickness = 4
+    Content.ScrollBarImageColor3 = CONFIG.SubTextColor
+    Content.Parent = MainFrame
+
+    local ContentList = Instance.new("UIListLayout")
+    ContentList.SortOrder = Enum.SortOrder.LayoutOrder
+    ContentList.Padding = UDim.new(0, 8)
+    ContentList.Parent = Content
+
+    local ContentPadding = Instance.new("UIPadding")
+    ContentPadding.PaddingLeft = UDim.new(0, 15)
+    ContentPadding.PaddingRight = UDim.new(0, 15)
+    ContentPadding.PaddingTop = UDim.new(0, 10)
+    ContentPadding.Parent = Content
+
+    -- Make draggable
+    local dragging, dragInput, dragStart, startPos
+    
+    local function update(input)
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+    
+    TopBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = MainFrame.Position
+            
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+    
+    TopBar.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            dragInput = input
+        end
+    end)
+    
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            update(input)
+        end
+    end)
+
+    local Window = {
+        MainFrame = MainFrame,
+        Sidebar = Sidebar,
+        Content = Content,
+        ContentList = ContentList,
+        Tabs = {}
+    }
+
+    return Window
+end
+
+-- Create Tab
+function Library:CreateTab(Window, tabName)
+    local TabButton = Instance.new("TextButton")
+    TabButton.Name = tabName
+    TabButton.Size = UDim2.new(1, 0, 0, 35)
+    TabButton.BackgroundColor3 = CONFIG.SecondaryColor
+    TabButton.BorderSizePixel = 0
+    TabButton.Text = tabName
+    TabButton.TextColor3 = CONFIG.SubTextColor
+    TabButton.TextSize = 13
+    TabButton.Font = Enum.Font.Gotham
+    TabButton.TextXAlignment = Enum.TextXAlignment.Left
+    TabButton.Parent = Window.Sidebar
+
+    local ButtonPadding = Instance.new("UIPadding")
+    ButtonPadding.PaddingLeft = UDim.new(0, 15)
+    ButtonPadding.Parent = TabButton
+
+    local Tab = {
+        Button = TabButton,
+        Content = Window.Content,
+        Elements = {},
+        Active = false
+    }
+
+    TabButton.MouseButton1Click:Connect(function()
+        for _, tab in pairs(Window.Tabs) do
+            tab.Button.BackgroundColor3 = CONFIG.SecondaryColor
+            tab.Button.TextColor3 = CONFIG.SubTextColor
+            tab.Active = false
+            for _, element in pairs(tab.Elements) do
+                element.Visible = false
+            end
+        end
+        
+        TabButton.BackgroundColor3 = CONFIG.MainColor
+        TabButton.TextColor3 = CONFIG.TextColor
+        Tab.Active = true
+        for _, element in pairs(Tab.Elements) do
+            element.Visible = true
+        end
+    end)
+
+    table.insert(Window.Tabs, Tab)
+    
+    -- Activate first tab
+    if #Window.Tabs == 1 then
+        TabButton.BackgroundColor3 = CONFIG.MainColor
+        TabButton.TextColor3 = CONFIG.TextColor
+        Tab.Active = true
+    end
+
+    return Tab
+end
+
+-- Create Toggle
+function Library:CreateToggle(Tab, text, default, callback)
+    local ToggleFrame = Instance.new("Frame")
+    ToggleFrame.Name = "Toggle"
+    ToggleFrame.Size = UDim2.new(1, 0, 0, 30)
+    ToggleFrame.BackgroundTransparency = 1
+    ToggleFrame.Visible = Tab.Active
+    ToggleFrame.Parent = Tab.Content
+
+    local ToggleLabel = Instance.new("TextLabel")
+    ToggleLabel.Size = UDim2.new(1, -40, 1, 0)
+    ToggleLabel.BackgroundTransparency = 1
+    ToggleLabel.Text = text
+    ToggleLabel.TextColor3 = CONFIG.TextColor
+    ToggleLabel.TextSize = 13
+    ToggleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    ToggleLabel.Font = Enum.Font.Gotham
+    ToggleLabel.Parent = ToggleFrame
+
+    local ToggleButton = Instance.new("TextButton")
+    ToggleButton.Size = UDim2.new(0, 35, 0, 18)
+    ToggleButton.Position = UDim2.new(1, -35, 0.5, -9)
+    ToggleButton.BackgroundColor3 = default and CONFIG.ToggleOnColor or CONFIG.ToggleOffColor
+    ToggleButton.Text = ""
+    ToggleButton.Parent = ToggleFrame
+
+    local ToggleCorner = Instance.new("UICorner")
+    ToggleCorner.CornerRadius = UDim.new(1, 0)
+    ToggleCorner.Parent = ToggleButton
+
+    local ToggleCircle = Instance.new("Frame")
+    ToggleCircle.Size = UDim2.new(0, 14, 0, 14)
+    ToggleCircle.Position = default and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)
+    ToggleCircle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    ToggleCircle.BorderSizePixel = 0
+    ToggleCircle.Parent = ToggleButton
+
+    local CircleCorner = Instance.new("UICorner")
+    CircleCorner.CornerRadius = UDim.new(1, 0)
+    CircleCorner.Parent = ToggleCircle
+
+    local toggled = default
+
+    ToggleButton.MouseButton1Click:Connect(function()
+        toggled = not toggled
+        
+        local TweenService = game:GetService("TweenService")
+        local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        
+        if toggled then
+            TweenService:Create(ToggleButton, tweenInfo, {BackgroundColor3 = CONFIG.ToggleOnColor}):Play()
+            TweenService:Create(ToggleCircle, tweenInfo, {Position = UDim2.new(1, -16, 0.5, -7)}):Play()
+        else
+            TweenService:Create(ToggleButton, tweenInfo, {BackgroundColor3 = CONFIG.ToggleOffColor}):Play()
+            TweenService:Create(ToggleCircle, tweenInfo, {Position = UDim2.new(0, 2, 0.5, -7)}):Play()
+        end
+        
+        if callback then
+            callback(toggled)
+        end
+    end)
+
+    table.insert(Tab.Elements, ToggleFrame)
+    Tab.Content.CanvasSize = UDim2.new(0, 0, 0, Tab.Content.UIListLayout.AbsoluteContentSize.Y + 20)
+
+    return ToggleButton
+end
+
+-- Create Button
+function Library:CreateButton(Tab, text, callback)
+    local ButtonFrame = Instance.new("Frame")
+    ButtonFrame.Name = "Button"
+    ButtonFrame.Size = UDim2.new(1, 0, 0, 32)
+    ButtonFrame.BackgroundTransparency = 1
+    ButtonFrame.Visible = Tab.Active
+    ButtonFrame.Parent = Tab.Content
+
+    local Button = Instance.new("TextButton")
+    Button.Size = UDim2.new(0, 80, 0, 26)
+    Button.Position = UDim2.new(1, -80, 0, 3)
+    Button.BackgroundColor3 = CONFIG.AccentColor
+    Button.Text = text
+    Button.TextColor3 = CONFIG.TextColor
+    Button.TextSize = 12
+    Button.Font = Enum.Font.GothamBold
+    Button.Parent = ButtonFrame
+
+    local ButtonCorner = Instance.new("UICorner")
+    ButtonCorner.CornerRadius = UDim.new(0, 4)
+    ButtonCorner.Parent = Button
+
+    Button.MouseButton1Click:Connect(function()
+        if callback then
+            callback()
+        end
+    end)
+
+    table.insert(Tab.Elements, ButtonFrame)
+    Tab.Content.CanvasSize = UDim2.new(0, 0, 0, Tab.Content.UIListLayout.AbsoluteContentSize.Y + 20)
+
+    return Button
+end
+
+-- Create Color Picker
+function Library:CreateColorPicker(Tab, text, default, callback)
+    local ColorFrame = Instance.new("Frame")
+    ColorFrame.Name = "ColorPicker"
+    ColorFrame.Size = UDim2.new(1, 0, 0, 30)
+    ColorFrame.BackgroundTransparency = 1
+    ColorFrame.Visible = Tab.Active
+    ColorFrame.Parent = Tab.Content
+
+    local ColorLabel = Instance.new("TextLabel")
+    ColorLabel.Size = UDim2.new(1, -40, 1, 0)
+    ColorLabel.BackgroundTransparency = 1
+    ColorLabel.Text = text
+    ColorLabel.TextColor3 = CONFIG.TextColor
+    ColorLabel.TextSize = 13
+    ColorLabel.TextXAlignment = Enum.TextXAlignment.Left
+    ColorLabel.Font = Enum.Font.Gotham
+    ColorLabel.Parent = ColorFrame
+
+    local ColorDisplay = Instance.new("TextButton")
+    ColorDisplay.Size = UDim2.new(0, 35, 0, 18)
+    ColorDisplay.Position = UDim2.new(1, -35, 0.5, -9)
+    ColorDisplay.BackgroundColor3 = default or Color3.fromRGB(100, 200, 100)
+    ColorDisplay.Text = ""
+    ColorDisplay.Parent = ColorFrame
+
+    local ColorCorner = Instance.new("UICorner")
+    ColorCorner.CornerRadius = UDim.new(0, 4)
+    ColorCorner.Parent = ColorDisplay
+
+    table.insert(Tab.Elements, ColorFrame)
+    Tab.Content.CanvasSize = UDim2.new(0, 0, 0, Tab.Content.UIListLayout.AbsoluteContentSize.Y + 20)
+
+    return ColorDisplay
+end
+
+return Library
