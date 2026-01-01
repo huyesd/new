@@ -366,14 +366,17 @@ function Library:CreateWindow(config)
 			local Section = {}
 			Section.Elements = {}
 			
-			local ContentContainer = Instance.new("Frame")
+			local ContentContainer = Instance.new("ScrollingFrame")
 			ContentContainer.Name = "TabContainer"
 			ContentContainer.AnchorPoint = Vector2.new(0, 0.5)
 			ContentContainer.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 			ContentContainer.BorderSizePixel = 0
-			ContentContainer.ClipsDescendants = false
+			ContentContainer.ClipsDescendants = true
 			ContentContainer.Position = side == "Left" and UDim2.new(0, 0, 0.491, 0) or UDim2.new(0.519, 0, 0.491, 0)
 			ContentContainer.Size = UDim2.new(0.481, 0, 0.982, 0)
+			ContentContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
+			ContentContainer.ScrollBarThickness = 4
+			ContentContainer.ScrollBarImageColor3 = Color3.fromRGB(66, 150, 250)
 			ContentContainer.Parent = TabFrame
 			
 			local ContentCorner = Instance.new("UICorner")
@@ -390,6 +393,11 @@ function Library:CreateWindow(config)
 			ElementLayout.SortOrder = Enum.SortOrder.LayoutOrder
 			ElementLayout.Padding = UDim.new(0.015, 0)
 			ElementLayout.Parent = ContentContainer
+			
+			-- Auto-resize canvas
+			ElementLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+				ContentContainer.CanvasSize = UDim2.new(0, 0, 0, ElementLayout.AbsoluteContentSize.Y + 10)
+			end)
 			
 			local SectionHeader = Instance.new("ImageLabel")
 			SectionHeader.Name = "SectionContainer"
@@ -413,6 +421,271 @@ function Library:CreateWindow(config)
 			SectionLabel.TextSize = 14
 			SectionLabel.TextXAlignment = Enum.TextXAlignment.Left
 			SectionLabel.Parent = SectionHeader
+			
+			function Section:AddButton(config)
+				config = config or {}
+				local name = config.Name or "Example Button"
+				local callback = config.Callback or function() end
+				
+				local ButtonContainer = Instance.new("Frame")
+				ButtonContainer.Name = "ButtonContainer"
+				ButtonContainer.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+				ButtonContainer.BorderSizePixel = 0
+				ButtonContainer.Size = UDim2.new(0.979, 0, 0.031, 0)
+				ButtonContainer.Parent = ContentContainer
+				
+				local ButtonCorner = Instance.new("UICorner")
+				ButtonCorner.CornerRadius = UDim.new(0.1, 0)
+				ButtonCorner.Parent = ButtonContainer
+				
+				local ButtonStroke = Instance.new("UIStroke")
+				ButtonStroke.Color = Color3.fromRGB(40, 40, 40)
+				ButtonStroke.Thickness = 1
+				ButtonStroke.Parent = ButtonContainer
+				
+				local Button = Instance.new("TextButton")
+				Button.BackgroundTransparency = 1
+				Button.Size = UDim2.new(1, 0, 1, 0)
+				Button.Font = Enum.Font.Code
+				Button.Text = name
+				Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+				Button.TextSize = 12
+				Button.Parent = ButtonContainer
+				
+				Button.MouseButton1Click:Connect(function()
+					callback()
+				end)
+				
+				Button.MouseEnter:Connect(function()
+					Tween(ButtonContainer, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(30, 30, 30)})
+				end)
+				
+				Button.MouseLeave:Connect(function()
+					Tween(ButtonContainer, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(20, 20, 20)})
+				end)
+				
+				return {
+					SetText = function(self, text)
+						Button.Text = text
+					end
+				}
+			end
+			
+			function Section:AddLabel(config)
+				config = config or {}
+				local text = config.Text or "Label"
+				
+				local LabelContainer = Instance.new("Frame")
+				LabelContainer.Name = "LabelContainer"
+				LabelContainer.BackgroundTransparency = 1
+				LabelContainer.Size = UDim2.new(0.979, 0, 0.025, 0)
+				LabelContainer.Parent = ContentContainer
+				
+				local Label = Instance.new("TextLabel")
+				Label.BackgroundTransparency = 1
+				Label.Size = UDim2.new(1, 0, 1, 0)
+				Label.Font = Enum.Font.Code
+				Label.Text = text
+				Label.TextColor3 = Color3.fromRGB(200, 200, 200)
+				Label.TextSize = 12
+				Label.TextWrapped = true
+				Label.TextXAlignment = Enum.TextXAlignment.Left
+				Label.Parent = LabelContainer
+				
+				return {
+					SetText = function(self, newText)
+						Label.Text = newText
+					end
+				}
+			end
+			
+			function Section:AddTextbox(config)
+				config = config or {}
+				local name = config.Name or "Textbox"
+				local placeholder = config.Placeholder or "Enter text..."
+				local default = config.Default or ""
+				local callback = config.Callback or function() end
+				
+				local TextboxContainer = Instance.new("Frame")
+				TextboxContainer.Name = "TextboxContainer"
+				TextboxContainer.BackgroundTransparency = 1
+				TextboxContainer.Size = UDim2.new(0.979, 0, 0.047, 0)
+				TextboxContainer.Parent = ContentContainer
+				
+				local TextboxLabel = Instance.new("TextLabel")
+				TextboxLabel.BackgroundTransparency = 1
+				TextboxLabel.Position = UDim2.new(0.01, 0, 0, 0)
+				TextboxLabel.Size = UDim2.new(1, 0, 0.4, 0)
+				TextboxLabel.Font = Enum.Font.Code
+				TextboxLabel.Text = name
+				TextboxLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+				TextboxLabel.TextSize = 12
+				TextboxLabel.TextXAlignment = Enum.TextXAlignment.Left
+				TextboxLabel.Parent = TextboxContainer
+				
+				local TextboxFrame = Instance.new("Frame")
+				TextboxFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+				TextboxFrame.BorderSizePixel = 0
+				TextboxFrame.Position = UDim2.new(0, 0, 0.5, 0)
+				TextboxFrame.Size = UDim2.new(1, 0, 0.5, 0)
+				TextboxFrame.Parent = TextboxContainer
+				
+				local TextboxCorner = Instance.new("UICorner")
+				TextboxCorner.CornerRadius = UDim.new(0.1, 0)
+				TextboxCorner.Parent = TextboxFrame
+				
+				local TextboxStroke = Instance.new("UIStroke")
+				TextboxStroke.Color = Color3.fromRGB(40, 40, 40)
+				TextboxStroke.Thickness = 1
+				TextboxStroke.Parent = TextboxFrame
+				
+				local Textbox = Instance.new("TextBox")
+				Textbox.BackgroundTransparency = 1
+				Textbox.Position = UDim2.new(0, 10, 0, 0)
+				Textbox.Size = UDim2.new(1, -20, 1, 0)
+				Textbox.Font = Enum.Font.Code
+				Textbox.PlaceholderText = placeholder
+				Textbox.PlaceholderColor3 = Color3.fromRGB(100, 100, 100)
+				Textbox.Text = default
+				Textbox.TextColor3 = Color3.fromRGB(255, 255, 255)
+				Textbox.TextSize = 12
+				Textbox.TextXAlignment = Enum.TextXAlignment.Left
+				Textbox.Parent = TextboxFrame
+				
+				Textbox.FocusLost:Connect(function(enterPressed)
+					if enterPressed then
+						callback(Textbox.Text)
+					end
+				end)
+				
+				Textbox.Focused:Connect(function()
+					Tween(TextboxStroke, TweenInfo.new(0.2), {Color = Color3.fromRGB(66, 150, 250)})
+				end)
+				
+				Textbox.FocusLost:Connect(function()
+					Tween(TextboxStroke, TweenInfo.new(0.2), {Color = Color3.fromRGB(40, 40, 40)})
+				end)
+				
+				return {
+					SetValue = function(self, value)
+						Textbox.Text = value
+					end,
+					GetValue = function(self)
+						return Textbox.Text
+					end
+				}
+			end
+			
+			function Section:AddKeybind(config)
+				config = config or {}
+				local name = config.Name or "Keybind"
+				local default = config.Default or "None"
+				local callback = config.Callback or function() end
+				
+				local KeybindContainer = Instance.new("Frame")
+				KeybindContainer.Name = "KeybindContainer"
+				KeybindContainer.BackgroundTransparency = 1
+				KeybindContainer.Size = UDim2.new(0.979, 0, 0.031, 0)
+				KeybindContainer.Parent = ContentContainer
+				
+				local KeybindLabel = Instance.new("TextLabel")
+				KeybindLabel.BackgroundTransparency = 1
+				KeybindLabel.Position = UDim2.new(0.01, 0, 0, 0)
+				KeybindLabel.Size = UDim2.new(0.6, 0, 1, 0)
+				KeybindLabel.Font = Enum.Font.Code
+				KeybindLabel.Text = name
+				KeybindLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+				KeybindLabel.TextSize = 12
+				KeybindLabel.TextXAlignment = Enum.TextXAlignment.Left
+				KeybindLabel.TextYAlignment = Enum.TextYAlignment.Center
+				KeybindLabel.Parent = KeybindContainer
+				
+				local KeybindButton = Instance.new("TextButton")
+				KeybindButton.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+				KeybindButton.BorderSizePixel = 0
+				KeybindButton.Position = UDim2.new(0.62, 0, 0.1, 0)
+				KeybindButton.Size = UDim2.new(0.37, 0, 0.8, 0)
+				KeybindButton.Font = Enum.Font.Code
+				KeybindButton.Text = "[" .. default .. "]"
+				KeybindButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+				KeybindButton.TextSize = 11
+				KeybindButton.Parent = KeybindContainer
+				
+				local KeybindCorner = Instance.new("UICorner")
+				KeybindCorner.CornerRadius = UDim.new(0.2, 0)
+				KeybindCorner.Parent = KeybindButton
+				
+				local KeybindStroke = Instance.new("UIStroke")
+				KeybindStroke.Color = Color3.fromRGB(40, 40, 40)
+				KeybindStroke.Thickness = 1
+				KeybindStroke.Parent = KeybindButton
+				
+				local currentKey = default
+				local listening = false
+				
+				KeybindButton.MouseButton1Click:Connect(function()
+					if listening then return end
+					listening = true
+					KeybindButton.Text = "[...]"
+					
+					local connection
+					connection = UserInputService.InputBegan:Connect(function(input)
+						if input.UserInputType == Enum.UserInputType.Keyboard then
+							local keyName = input.KeyCode.Name
+							currentKey = keyName
+							KeybindButton.Text = "[" .. keyName .. "]"
+							callback(keyName)
+							listening = false
+							connection:Disconnect()
+						end
+					end)
+				end)
+				
+				KeybindButton.MouseEnter:Connect(function()
+					Tween(KeybindButton, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(30, 30, 30)})
+				end)
+				
+				KeybindButton.MouseLeave:Connect(function()
+					Tween(KeybindButton, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(20, 20, 20)})
+				end)
+				
+				return {
+					SetKey = function(self, key)
+						currentKey = key
+						KeybindButton.Text = "[" .. key .. "]"
+					end,
+					GetKey = function(self)
+						return currentKey
+					end
+				}
+			end
+			
+			function Section:AddDivider(text)
+				local DividerContainer = Instance.new("Frame")
+				DividerContainer.Name = "DividerContainer"
+				DividerContainer.BackgroundTransparency = 1
+				DividerContainer.Size = UDim2.new(0.979, 0, 0.02, 0)
+				DividerContainer.Parent = ContentContainer
+				
+				if text then
+					local DividerLabel = Instance.new("TextLabel")
+					DividerLabel.BackgroundTransparency = 1
+					DividerLabel.Size = UDim2.new(1, 0, 1, 0)
+					DividerLabel.Font = Enum.Font.Code
+					DividerLabel.Text = text
+					DividerLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+					DividerLabel.TextSize = 11
+					DividerLabel.TextXAlignment = Enum.TextXAlignment.Left
+					DividerLabel.Parent = DividerContainer
+				else
+					local DividerLine = Instance.new("Frame")
+					DividerLine.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+					DividerLine.BorderSizePixel = 0
+					DividerLine.Position = UDim2.new(0, 0, 0.5, 0)
+					DividerLine.Size = UDim2.new(1, 0, 0, 1)
+					DividerLine.Parent = DividerContainer
+				end
+			end
 			
 			function Section:AddSearchBar(config)
 				config = config or {}
