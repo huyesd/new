@@ -360,11 +360,14 @@ function Library:CreateWindow(config)
 			
 			-- Check if section already exists for this side
 			if TabSections[side] then
+				-- Return existing section but update its header if needed
 				return TabSections[side]
 			end
 			
 			local Section = {}
 			Section.Elements = {}
+			Section.Name = sectionName
+			Section.Side = side
 			
 			local ContentContainer = Instance.new("ScrollingFrame")
 			ContentContainer.Name = "TabContainer"
