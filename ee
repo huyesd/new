@@ -159,7 +159,7 @@ function Library:CreateWindow(config)
 		local TabFrame = Instance.new("Frame")
 		TabFrame.Name = tabName .. "Content"
 		TabFrame.BackgroundTransparency = 1
-		TabFrame.ClipsDescendants = true
+		TabFrame.ClipsDescendants = false
 		TabFrame.Position = UDim2.new(0.256, 0, 0, 0)
 		TabFrame.Size = UDim2.new(0.744, 0, 1, 0)
 		TabFrame.Visible = false
