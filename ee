@@ -17,7 +17,6 @@ end
 function Library.new()
 	local self = setmetatable({}, Library)
 	
-	-- Create ScreenGui
 	self.ScreenGui = Instance.new("ScreenGui")
 	self.ScreenGui.Name = "LibraryUI"
 	self.ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
@@ -35,7 +34,6 @@ function Library:CreateWindow(config)
 	Window.Tabs = {}
 	Window.CurrentTab = nil
 	
-	-- Main Frame
 	local MainFrame = Instance.new("Frame")
 	MainFrame.Name = "LibraryUI"
 	MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -49,7 +47,6 @@ function Library:CreateWindow(config)
 	MainCorner.CornerRadius = UDim.new(0.02, 0)
 	MainCorner.Parent = MainFrame
 	
-	-- Make draggable
 	local dragging, dragInput, dragStart, startPos
 	MainFrame.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -75,7 +72,6 @@ function Library:CreateWindow(config)
 		end
 	end)
 	
-	-- Sidebar
 	local Sidebar = Instance.new("Frame")
 	Sidebar.Name = "SectionGrouper"
 	Sidebar.AnchorPoint = Vector2.new(0, 0.5)
@@ -89,7 +85,6 @@ function Library:CreateWindow(config)
 	SidebarCorner.CornerRadius = UDim.new(0.05, 0)
 	SidebarCorner.Parent = Sidebar
 	
-	-- Tab Container in Sidebar
 	local TabContainer = Instance.new("Frame")
 	TabContainer.Name = "Container"
 	TabContainer.BackgroundTransparency = 1
@@ -102,7 +97,6 @@ function Library:CreateWindow(config)
 	TabLayout.Padding = UDim.new(0.05, 0)
 	TabLayout.Parent = TabContainer
 	
-	-- Content Area
 	local ContentFolder = Instance.new("Folder")
 	ContentFolder.Name = "ContentFolder"
 	ContentFolder.Parent = MainFrame
@@ -112,7 +106,6 @@ function Library:CreateWindow(config)
 		Tab.Name = tabName
 		Tab.Elements = {}
 		
-		-- Tab Button in Sidebar
 		local TabButton = Instance.new("ImageLabel")
 		TabButton.Name = tabName .. "Tab"
 		TabButton.BackgroundTransparency = 1
@@ -140,7 +133,6 @@ function Library:CreateWindow(config)
 		ClickButton.Text = ""
 		ClickButton.Parent = TabButton
 		
-		-- Tab Content Frame
 		local TabFrame = Instance.new("Frame")
 		TabFrame.Name = tabName .. "Content"
 		TabFrame.BackgroundTransparency = 1
@@ -175,9 +167,7 @@ function Library:CreateWindow(config)
 		ContentPadding.PaddingTop = UDim.new(0.018, 0)
 		ContentPadding.Parent = TabFrame
 		
-		-- Tab switching logic
 		local function SwitchToTab()
-			-- Hide all tabs
 			for _, tab in pairs(Window.Tabs) do
 				tab.Frame.Visible = false
 				local label = tab.Button:FindFirstChild("TextLabel")
@@ -187,7 +177,6 @@ function Library:CreateWindow(config)
 				Tween(tab.Button, TweenInfo.new(0.2), {ImageTransparency = 1})
 			end
 			
-			-- Show this tab
 			TabFrame.Visible = true
 			TabLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 			Tween(TabButton, TweenInfo.new(0.2), {ImageTransparency = 0})
@@ -196,7 +185,6 @@ function Library:CreateWindow(config)
 		
 		ClickButton.MouseButton1Click:Connect(SwitchToTab)
 		
-		-- Hover effects
 		ClickButton.MouseEnter:Connect(function()
 			if Window.CurrentTab ~= Tab then
 				Tween(TabLabel, TweenInfo.new(0.2), {TextColor3 = Color3.fromRGB(200, 200, 200)})
@@ -209,7 +197,6 @@ function Library:CreateWindow(config)
 			end
 		end)
 		
-		-- Add Section Header
 		local function AddSection(sectionName)
 			local SectionContainer = Instance.new("ImageLabel")
 			SectionContainer.Name = "SectionContainer"
@@ -263,7 +250,6 @@ function Library:CreateWindow(config)
 			ToggleLayout.Padding = UDim.new(0.025, 0)
 			ToggleLayout.Parent = ToggleContainer
 			
-			-- Toggle Button
 			local ToggleFrame = Instance.new("Frame")
 			ToggleFrame.Name = "Toggle"
 			ToggleFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
@@ -292,7 +278,6 @@ function Library:CreateWindow(config)
 			Checkmark.ImageTransparency = 1
 			Checkmark.Parent = ToggleButton
 			
-			-- Toggle Label
 			local ToggleLabel = Instance.new("TextLabel")
 			ToggleLabel.BackgroundTransparency = 1
 			ToggleLabel.Position = UDim2.new(0.073, 0, 0.118, 0)
@@ -324,7 +309,6 @@ function Library:CreateWindow(config)
 				UpdateToggle()
 			end)
 			
-			-- Hover effect
 			ToggleButton.MouseEnter:Connect(function()
 				if toggled then
 					Tween(ToggleFrame, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(76, 160, 255)})
@@ -371,7 +355,6 @@ function Library:CreateWindow(config)
 			SliderPadding.PaddingLeft = UDim.new(0.01, 0)
 			SliderPadding.Parent = SliderContainer
 			
-			-- Slider Label
 			local SliderLabel = Instance.new("TextLabel")
 			SliderLabel.BackgroundTransparency = 1
 			SliderLabel.Position = UDim2.new(0, 0, 0, 0)
@@ -383,7 +366,6 @@ function Library:CreateWindow(config)
 			SliderLabel.TextXAlignment = Enum.TextXAlignment.Left
 			SliderLabel.Parent = SliderContainer
 			
-			-- Value Label
 			local ValueLabel = Instance.new("TextLabel")
 			ValueLabel.BackgroundTransparency = 1
 			ValueLabel.Position = UDim2.new(0.877, 0, 0, 0)
@@ -394,7 +376,6 @@ function Library:CreateWindow(config)
 			ValueLabel.TextScaled = true
 			ValueLabel.Parent = SliderContainer
 			
-			-- Slider Track
 			local SliderTrack = Instance.new("Frame")
 			SliderTrack.Name = "SliderFrame"
 			SliderTrack.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
@@ -404,7 +385,6 @@ function Library:CreateWindow(config)
 			SliderTrack.Size = UDim2.new(0, 230, 0, 3)
 			SliderTrack.Parent = SliderLabel
 			
-			-- Slider Fill
 			local SliderFill = Instance.new("Frame")
 			SliderFill.Name = "SliderFill"
 			SliderFill.BackgroundColor3 = Color3.fromRGB(66, 150, 250)
@@ -476,7 +456,6 @@ function Library:CreateWindow(config)
 			DropdownPadding.PaddingLeft = UDim.new(0.01, 0)
 			DropdownPadding.Parent = DropdownContainer
 			
-			-- Dropdown Header
 			local DropdownHeader = Instance.new("Frame")
 			DropdownHeader.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 			DropdownHeader.BorderSizePixel = 0
@@ -519,7 +498,6 @@ function Library:CreateWindow(config)
 			DropdownButton.ZIndex = 7
 			DropdownButton.Parent = DropdownHeader
 			
-			-- Dropdown List
 			local DropdownList = Instance.new("Frame")
 			DropdownList.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 			DropdownList.BorderSizePixel = 0
@@ -564,7 +542,6 @@ function Library:CreateWindow(config)
 				end
 			end)
 			
-			-- Create option buttons
 			for _, option in ipairs(options) do
 				local OptionButton = Instance.new("TextButton")
 				OptionButton.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
@@ -597,7 +574,6 @@ function Library:CreateWindow(config)
 				end)
 			end
 			
-			-- Hover effect on header
 			DropdownButton.MouseEnter:Connect(function()
 				Tween(DropdownHeader, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(30, 30, 30)})
 			end)
@@ -621,7 +597,6 @@ function Library:CreateWindow(config)
 			Tab = Tab
 		}
 		
-		-- Auto-select first tab
 		if not Window.CurrentTab then
 			task.wait(0.1)
 			SwitchToTab()
@@ -634,53 +609,3 @@ function Library:CreateWindow(config)
 end
 
 return Library
-
---[[
-==========================================
-EXAMPLE USAGE
-==========================================
-
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/huyesd/new/refs/heads/main/ee"))()
-
--- Create Library Instance
-local Lib = Library.new()
-
--- Create Window
-local Window = Lib:CreateWindow({
-    Name = "My UI Library"
-})
-
--- Create Tab
-local MainTab = Window:CreateTab("misc")
-
--- Add Toggle
-MainTab:AddToggle({
-    Name = "Example Toggle",
-    Default = false,
-    Callback = function(value)
-        print("Toggle is now:", value)
-    end
-})
-
--- Add Slider
-MainTab:AddSlider({
-    Name = "Example Slider",
-    Min = 0,
-    Max = 100,
-    Default = 50,
-    Callback = function(value)
-        print("Slider value:", value)
-    end
-})
-
--- Add Dropdown
-MainTab:AddDropdown({
-    Name = "Example Dropdown",
-    Options = {"Option 1", "Option 2", "Option 3"},
-    Default = "Option 1",
-    Callback = function(value)
-        print("Selected:", value)
-    end
-})
-
-]]
