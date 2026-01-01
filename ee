@@ -170,7 +170,7 @@ function Library:CreateWindow(config)
 		ContentContainer.AnchorPoint = Vector2.new(0, 0.5)
 		ContentContainer.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 		ContentContainer.BorderSizePixel = 0
-		ContentContainer.ClipsDescendants = true
+		ContentContainer.ClipsDescendants = false
 		ContentContainer.Position = UDim2.new(0, 0, 0.491, 0)
 		ContentContainer.Size = UDim2.new(0.481, 0, 0.982, 0)
 		ContentContainer.Parent = TabFrame
@@ -720,7 +720,7 @@ function Library:CreateWindow(config)
 			SliderTrack.Name = "SliderFrame"
 			SliderTrack.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 			SliderTrack.BorderSizePixel = 0
-			SliderTrack.ClipsDescendants = true
+			SliderTrack.ClipsDescendants = false
 			SliderTrack.Position = UDim2.new(0, 0, 1.561, 0)
 			SliderTrack.Size = UDim2.new(0, 230, 0, 3)
 			SliderTrack.Parent = SliderLabel
@@ -854,7 +854,7 @@ function Library:CreateWindow(config)
 			DropdownList.BorderSizePixel = 0
 			DropdownList.Position = UDim2.new(0, 0, 1.1, 0)
 			DropdownList.Size = UDim2.new(1, 0, 0, 0)
-			DropdownList.ClipsDescendants = true
+			DropdownList.ClipsDescendants = false
 			DropdownList.Visible = false
 			DropdownList.ZIndex = 10
 			DropdownList.Parent = DropdownContainer
