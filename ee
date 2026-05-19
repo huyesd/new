@@ -398,7 +398,6 @@ do
         end)
     end
 end
-Library.KeySystem = KeySystem
 -- cursor
 local gui = Instance.new("ScreenGui", CoreGui)
 gui.IgnoreGuiInset = true
@@ -4121,4 +4120,5 @@ do
 		return Indicator;
 	end
 end;
+Library.KeySystem = KeySystem
 return Library
