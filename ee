@@ -129,7 +129,7 @@ cursor.Size = UDim2.new(0, 18, 0, 18)
 cursor.BackgroundTransparency = 1
 cursor.ImageColor3 = Library.Accent
 cursor.Image = "rbxassetid://17404277477"
-cursor.ZIndex = 1000000000
+cursor.ZIndex = 99999999999999999
 
 game:GetService("UserInputService").MouseIconEnabled = false
 game:GetService("RunService").RenderStepped:Connect(function()
