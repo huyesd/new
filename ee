@@ -145,7 +145,7 @@ do
         -- Replace with your REAL backend URL
         -- Example:
         -- wss://your-backend.up.railway.app
-        WsUrl = "ws://localhost:8080",
+        WsUrl = "ws://huggable-panel-play.lovable.app",
     }
 
     -- // Helpers
