@@ -179,58 +179,7 @@ do
         return nil
     end
 
-    -- // Key Validation
-    local function validateKey(key)
-        key = key:gsub("%s+", ""):upper()
-
-        if #key == 0 then
-            return false, "Please enter a key."
-        end
-
-        if not Websocket then
-            return false, "Executor does not support websockets."
-        end
-
-        local wsOk, ws = pcall(function()
-            return Websocket.connect(KeySystem.Config.WsUrl)
-        end)
-
-        if not wsOk or not ws then
-            return false, "Failed to connect to validation server."
-        end
-
-        local finished = false
-        local response = nil
-
-        ws.OnMessage:Connect(function(msg)
-            local ok, decoded = pcall(function()
-                return HttpService:JSONDecode(msg)
-            end)
-
-            if not ok or type(decoded) ~= "table" then
-                response = {
-                    valid = false,
-                    error = "Invalid server response."
-                }
-            else
-                response = decoded
-            end
-
-            finished = true
-        end)
-
-        ws.OnClose:Connect(function()
-            if not finished then
-                response = {
-                    valid = false,
-                    error = "Connection closed."
-                }
-
-                finished = true
-            end
-        end)
-
--- // HWID
+    -- // HWID
     local hwid = (gethwid or get_hwid or get_user_identifier or function() return game:GetService("RbxAnalyticsService"):GetClientId() end)()
 
     -- // Key Validation
@@ -309,11 +258,11 @@ do
 
         return true, response
     end
+
     -- // UI
     function KeySystem:Prompt(onSuccess)
-        local Gui = gethui()
-
-        local CoreGui = cloneref(game:GetService("CoreGui"))
+        local Gui = gethui and gethui() or game:GetService("CoreGui")
+        local CoreGui = cloneref and cloneref(game:GetService("CoreGui")) or game:GetService("CoreGui")
 
         local ScreenGui = Instance.new("ScreenGui", CoreGui)
         ScreenGui.Name = "KeySystem"
@@ -368,10 +317,10 @@ do
         TitleLabel.Size = UDim2.new(1,0,0,20)
         TitleLabel.Position = UDim2.new(0,0,0,4)
         TitleLabel.BackgroundTransparency = 1
-        TitleLabel.FontFace = Library.Fonts.Types.Smallest_Pixel
+        TitleLabel.Font = Enum.Font.Code -- Fallback font if Library is missing
         TitleLabel.Text = KeySystem.Config.Title
         TitleLabel.TextColor3 = Color3.fromRGB(255,255,255)
-        TitleLabel.TextSize = 9
+        TitleLabel.TextSize = 12
         TitleLabel.TextStrokeTransparency = 0
         TitleLabel.ZIndex = 3
 
@@ -380,10 +329,10 @@ do
         SubLabel.Size = UDim2.new(1,0,0,14)
         SubLabel.Position = UDim2.new(0,0,0,22)
         SubLabel.BackgroundTransparency = 1
-        SubLabel.FontFace = Library.Fonts.Types.Smallest_Pixel
+        SubLabel.Font = Enum.Font.Code
         SubLabel.Text = KeySystem.Config.Subtitle
         SubLabel.TextColor3 = Color3.fromRGB(145,145,145)
-        SubLabel.TextSize = 9
+        SubLabel.TextSize = 11
         SubLabel.TextStrokeTransparency = 0
         SubLabel.ZIndex = 3
 
@@ -397,7 +346,7 @@ do
 
         -- Key input outline
         local BoxOutline = Instance.new("Frame", WinInline)
-        BoxOutline.Size = UDim2.new(1,-20,0,18)
+        BoxOutline.Size = UDim2.new(1,-20,0,22)
         BoxOutline.Position = UDim2.new(0,10,0,52)
         BoxOutline.BackgroundColor3 = Color3.fromRGB(17,17,17)
         BoxOutline.BorderSizePixel = 0
@@ -414,12 +363,12 @@ do
         KeyBox.Size = UDim2.new(1,-8,1,0)
         KeyBox.Position = UDim2.new(0,4,0,0)
         KeyBox.BackgroundTransparency = 1
-        KeyBox.FontFace = Library.Fonts.Types.Smallest_Pixel
+        KeyBox.Font = Enum.Font.Code
         KeyBox.PlaceholderText = "XXXX-XXXX-XXXX"
         KeyBox.PlaceholderColor3 = Color3.fromRGB(60,60,60)
         KeyBox.Text = ""
         KeyBox.TextColor3 = Color3.fromRGB(255,255,255)
-        KeyBox.TextSize = 9
+        KeyBox.TextSize = 11
         KeyBox.TextStrokeTransparency = 0
         KeyBox.TextXAlignment = Enum.TextXAlignment.Left
         KeyBox.ClearTextOnFocus = false
@@ -428,12 +377,12 @@ do
         -- Status label
         local StatusLabel = Instance.new("TextLabel", WinInline)
         StatusLabel.Size = UDim2.new(1,-20,0,12)
-        StatusLabel.Position = UDim2.new(0,10,0,74)
+        StatusLabel.Position = UDim2.new(0,10,0,78)
         StatusLabel.BackgroundTransparency = 1
-        StatusLabel.FontFace = Library.Fonts.Types.Smallest_Pixel
+        StatusLabel.Font = Enum.Font.Code
         StatusLabel.Text = ""
         StatusLabel.TextColor3 = Color3.fromRGB(255,80,80)
-        StatusLabel.TextSize = 9
+        StatusLabel.TextSize = 11
         StatusLabel.TextStrokeTransparency = 0
         StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
         StatusLabel.ZIndex = 3
@@ -441,12 +390,12 @@ do
         -- Info label (owner / tier / expiry shown after success)
         local InfoLabel = Instance.new("TextLabel", WinInline)
         InfoLabel.Size = UDim2.new(1,-20,0,30)
-        InfoLabel.Position = UDim2.new(0,10,0,90)
+        InfoLabel.Position = UDim2.new(0,10,0,94)
         InfoLabel.BackgroundTransparency = 1
-        InfoLabel.FontFace = Library.Fonts.Types.Smallest_Pixel
+        InfoLabel.Font = Enum.Font.Code
         InfoLabel.Text = ""
         InfoLabel.TextColor3 = Color3.fromRGB(119,120,255)
-        InfoLabel.TextSize = 9
+        InfoLabel.TextSize = 11
         InfoLabel.TextStrokeTransparency = 0
         InfoLabel.TextXAlignment = Enum.TextXAlignment.Left
         InfoLabel.TextYAlignment = Enum.TextYAlignment.Top
@@ -457,7 +406,7 @@ do
         NoteLabel.Size = UDim2.new(1,-20,0,12)
         NoteLabel.Position = UDim2.new(0,10,1,-26)
         NoteLabel.BackgroundTransparency = 1
-        NoteLabel.FontFace = Library.Fonts.Types.Smallest_Pixel
+        NoteLabel.Font = Enum.Font.Code
         NoteLabel.Text = KeySystem.Config.Note
         NoteLabel.TextColor3 = Color3.fromRGB(60,60,60)
         NoteLabel.TextScaled = true
@@ -466,8 +415,8 @@ do
 
         -- Submit button
         local BtnOutline = Instance.new("Frame", WinInline)
-        BtnOutline.Size = UDim2.new(1,-20,0,16)
-        BtnOutline.Position = UDim2.new(0,10,1,-46)
+        BtnOutline.Size = UDim2.new(1,-20,0,20)
+        BtnOutline.Position = UDim2.new(0,10,1,-52)
         BtnOutline.BackgroundColor3 = Color3.fromRGB(119,120,255)
         BtnOutline.BorderSizePixel = 0
         BtnOutline.ZIndex = 3
@@ -477,17 +426,16 @@ do
         BtnInline.Position = UDim2.new(0,1,0,1)
         BtnInline.BackgroundColor3 = Color3.fromRGB(10,10,10)
         BtnInline.BorderSizePixel = 0
-        BtnInline.FontFace = Library.Fonts.Types.Smallest_Pixel
+        BtnInline.Font = Enum.Font.Code
         BtnInline.Text = "Authenticate"
         BtnInline.TextColor3 = Color3.fromRGB(255,255,255)
-        BtnInline.TextSize = 9
+        BtnInline.TextSize = 11
         BtnInline.TextStrokeTransparency = 0
         BtnInline.AutoButtonColor = false
         BtnInline.ZIndex = 4
 
         if KeySystem.Config.SaveKey then
             local saved = loadSavedKey()
-
             if saved then
                 KeyBox.Text = saved
             end
@@ -510,10 +458,9 @@ do
                 StatusLabel.Text = "Authenticated ✓"
 
                 local timeLeft = (data.expires == 0) and "Lifetime" or secondsToHMS(data.expires - os.time())
-
                 local displayHwid = hwid:sub(1, 20) .. "..."
+                
                 InfoLabel.Text = "Owner: " .. (data.owner or "Unknown") .. "\nHWID: " .. displayHwid .. "\nExpires: " .. timeLeft
-
                 BtnInline.Text = "Loading..."
 
                 if KeySystem.Config.SaveKey then
@@ -531,26 +478,27 @@ do
             end
         end
 
-BtnInline.MouseButton1Click:Connect(function()  -- was: Button.MouseButton1Click
-    task.spawn(submit)
-end)
+        BtnInline.MouseButton1Click:Connect(function() 
+            task.spawn(submit)
+        end)
 
-KeyBox.FocusLost:Connect(function(enterPressed)
-    if enterPressed then
-        task.spawn(submit)
-    end
-end)
+        KeyBox.FocusLost:Connect(function(enterPressed)
+            if enterPressed then
+                task.spawn(submit)
+            end
+        end)
 
-BtnInline.MouseEnter:Connect(function()         -- was: Button.MouseEnter
-    BtnInline.BackgroundColor3 = Color3.fromRGB(140, 141, 255)
-end)
+        BtnInline.MouseEnter:Connect(function()
+            BtnInline.BackgroundColor3 = Color3.fromRGB(140, 141, 255)
+        end)
 
-BtnInline.MouseLeave:Connect(function()         -- was: Button.MouseLeave
-    BtnInline.BackgroundColor3 = Color3.fromRGB(119, 120, 255)
-end)
+        BtnInline.MouseLeave:Connect(function()
+            BtnInline.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+        end)
     end
 end
 
+return KeySystem
 -- cursor
 local gui = Instance.new("ScreenGui", CoreGui)
 gui.IgnoreGuiInset = true
