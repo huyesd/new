@@ -76,7 +76,7 @@ Library = {
 		[Enum.UserInputType.MouseButton3] = "MB3"
 	};
 	Connections = {};
-	UIKey = Enum.KeyCode.RShift;
+	UIKey = Enum.KeyCode.RightShift;
 	ScreenGUI = nil;
 	Friends = {};
 	Priorities = {};
