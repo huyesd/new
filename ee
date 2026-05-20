@@ -286,96 +286,177 @@ do
     function KeySystem:Prompt(onSuccess)
         local Gui = gethui()
 
-        local ScreenGui = Instance.new("ScreenGui")
-        ScreenGui.Name = "KeySystem"
-        ScreenGui.Parent = Gui
-        ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
-        ScreenGui.IgnoreGuiInset = true
-        ScreenGui.ResetOnSpawn = false
+        local CoreGui = cloneref(game:GetService("CoreGui"))
 
-        local Backdrop = Instance.new("Frame")
-        Backdrop.Parent = ScreenGui
+        local ScreenGui = Instance.new("ScreenGui", CoreGui)
+        ScreenGui.Name = "KeySystem"
+        ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
+        ScreenGui.DisplayOrder = 1000000
+        ScreenGui.IgnoreGuiInset = true
+
+        -- Blur/dim backdrop
+        local Backdrop = Instance.new("Frame", ScreenGui)
         Backdrop.Size = UDim2.new(1,0,1,0)
         Backdrop.BackgroundColor3 = Color3.fromRGB(0,0,0)
-        Backdrop.BackgroundTransparency = 0.4
+        Backdrop.BackgroundTransparency = 0.45
         Backdrop.BorderSizePixel = 0
+        Backdrop.ZIndex = 1
 
-        local Main = Instance.new("Frame")
-        Main.Parent = ScreenGui
-        Main.Size = UDim2.new(0,320,0,180)
-        Main.Position = UDim2.new(0.5,-160,0.5,-90)
-        Main.BackgroundColor3 = Color3.fromRGB(15,15,15)
-        Main.BorderSizePixel = 0
+        -- Window outline
+        local WinOutline = Instance.new("Frame", ScreenGui)
+        WinOutline.Size = UDim2.new(0, 320, 0, 180)
+        WinOutline.Position = UDim2.new(0.5, -160, 0.5, -90)
+        WinOutline.BackgroundColor3 = Color3.fromRGB(119,120,255)
+        WinOutline.BorderSizePixel = 0
+        WinOutline.ZIndex = 2
 
-        local Stroke = Instance.new("UIStroke")
-        Stroke.Parent = Main
-        Stroke.Color = Color3.fromRGB(119,120,255)
-        Stroke.Thickness = 1
+        local WinInline = Instance.new("Frame", WinOutline)
+        WinInline.Size = UDim2.new(1,-2,1,-2)
+        WinInline.Position = UDim2.new(0,1,0,1)
+        WinInline.BackgroundColor3 = Color3.fromRGB(10,10,10)
+        WinInline.BorderSizePixel = 0
+        WinInline.ZIndex = 2
 
-        local Corner = Instance.new("UICorner")
-        Corner.Parent = Main
+        -- Accent bar
+        local AccentBar = Instance.new("Frame", WinInline)
+        AccentBar.Size = UDim2.new(1,0,0,1)
+        AccentBar.BackgroundColor3 = Color3.fromRGB(119,120,255)
+        AccentBar.BorderSizePixel = 0
+        AccentBar.ZIndex = 3
 
-        local Title = Instance.new("TextLabel")
-        Title.Parent = Main
-        Title.Size = UDim2.new(1,0,0,25)
-        Title.Position = UDim2.new(0,0,0,8)
-        Title.BackgroundTransparency = 1
-        Title.Font = Enum.Font.Code
-        Title.Text = KeySystem.Config.Title
-        Title.TextSize = 18
-        Title.TextColor3 = Color3.new(1,1,1)
+        local UIGrad = Instance.new("UIGradient", AccentBar)
+        UIGrad.Color = ColorSequence.new{
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(28,31,53)),
+            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255,255,255)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(28,31,53)),
+        }
+        UIGrad.Transparency = NumberSequence.new{
+            NumberSequenceKeypoint.new(0,0.5),
+            NumberSequenceKeypoint.new(0.5,0.2),
+            NumberSequenceKeypoint.new(1,0.5),
+        }
 
-        local Subtitle = Instance.new("TextLabel")
-        Subtitle.Parent = Main
-        Subtitle.Size = UDim2.new(1,0,0,20)
-        Subtitle.Position = UDim2.new(0,0,0,30)
-        Subtitle.BackgroundTransparency = 1
-        Subtitle.Font = Enum.Font.Code
-        Subtitle.Text = KeySystem.Config.Subtitle
-        Subtitle.TextSize = 14
-        Subtitle.TextColor3 = Color3.fromRGB(160,160,160)
+        -- Title
+        local TitleLabel = Instance.new("TextLabel", WinInline)
+        TitleLabel.Size = UDim2.new(1,0,0,20)
+        TitleLabel.Position = UDim2.new(0,0,0,4)
+        TitleLabel.BackgroundTransparency = 1
+        TitleLabel.FontFace = Library.Fonts.Types.Smallest_Pixel
+        TitleLabel.Text = KeySystem.Config.Title
+        TitleLabel.TextColor3 = Color3.fromRGB(255,255,255)
+        TitleLabel.TextSize = 9
+        TitleLabel.TextStrokeTransparency = 0
+        TitleLabel.ZIndex = 3
 
-        local KeyBox = Instance.new("TextBox")
-        KeyBox.Parent = Main
-        KeyBox.Size = UDim2.new(1,-20,0,35)
-        KeyBox.Position = UDim2.new(0,10,0,60)
-        KeyBox.BackgroundColor3 = Color3.fromRGB(25,25,25)
-        KeyBox.TextColor3 = Color3.new(1,1,1)
+        -- Subtitle
+        local SubLabel = Instance.new("TextLabel", WinInline)
+        SubLabel.Size = UDim2.new(1,0,0,14)
+        SubLabel.Position = UDim2.new(0,0,0,22)
+        SubLabel.BackgroundTransparency = 1
+        SubLabel.FontFace = Library.Fonts.Types.Smallest_Pixel
+        SubLabel.Text = KeySystem.Config.Subtitle
+        SubLabel.TextColor3 = Color3.fromRGB(145,145,145)
+        SubLabel.TextSize = 9
+        SubLabel.TextStrokeTransparency = 0
+        SubLabel.ZIndex = 3
+
+        -- Divider
+        local Div = Instance.new("Frame", WinInline)
+        Div.Size = UDim2.new(1,-20,0,1)
+        Div.Position = UDim2.new(0,10,0,40)
+        Div.BackgroundColor3 = Color3.fromRGB(30,30,30)
+        Div.BorderSizePixel = 0
+        Div.ZIndex = 3
+
+        -- Key input outline
+        local BoxOutline = Instance.new("Frame", WinInline)
+        BoxOutline.Size = UDim2.new(1,-20,0,18)
+        BoxOutline.Position = UDim2.new(0,10,0,52)
+        BoxOutline.BackgroundColor3 = Color3.fromRGB(17,17,17)
+        BoxOutline.BorderSizePixel = 0
+        BoxOutline.ZIndex = 3
+
+        local BoxInline = Instance.new("Frame", BoxOutline)
+        BoxInline.Size = UDim2.new(1,-2,1,-2)
+        BoxInline.Position = UDim2.new(0,1,0,1)
+        BoxInline.BackgroundColor3 = Color3.fromRGB(8,8,8)
+        BoxInline.BorderSizePixel = 0
+        BoxInline.ZIndex = 4
+
+        local KeyBox = Instance.new("TextBox", BoxInline)
+        KeyBox.Size = UDim2.new(1,-8,1,0)
+        KeyBox.Position = UDim2.new(0,4,0,0)
+        KeyBox.BackgroundTransparency = 1
+        KeyBox.FontFace = Library.Fonts.Types.Smallest_Pixel
         KeyBox.PlaceholderText = "XXXX-XXXX-XXXX"
-        KeyBox.PlaceholderColor3 = Color3.fromRGB(120,120,120)
-        KeyBox.Font = Enum.Font.Code
-        KeyBox.TextSize = 16
+        KeyBox.PlaceholderColor3 = Color3.fromRGB(60,60,60)
+        KeyBox.Text = ""
+        KeyBox.TextColor3 = Color3.fromRGB(255,255,255)
+        KeyBox.TextSize = 9
+        KeyBox.TextStrokeTransparency = 0
+        KeyBox.TextXAlignment = Enum.TextXAlignment.Left
         KeyBox.ClearTextOnFocus = false
-        KeyBox.BorderSizePixel = 0
+        KeyBox.ZIndex = 5
 
-        local KeyCorner = Instance.new("UICorner")
-        KeyCorner.Parent = KeyBox
+        -- Status label
+        local StatusLabel = Instance.new("TextLabel", WinInline)
+        StatusLabel.Size = UDim2.new(1,-20,0,12)
+        StatusLabel.Position = UDim2.new(0,10,0,74)
+        StatusLabel.BackgroundTransparency = 1
+        StatusLabel.FontFace = Library.Fonts.Types.Smallest_Pixel
+        StatusLabel.Text = ""
+        StatusLabel.TextColor3 = Color3.fromRGB(255,80,80)
+        StatusLabel.TextSize = 9
+        StatusLabel.TextStrokeTransparency = 0
+        StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+        StatusLabel.ZIndex = 3
 
-        local Status = Instance.new("TextLabel")
-        Status.Parent = Main
-        Status.Size = UDim2.new(1,-20,0,20)
-        Status.Position = UDim2.new(0,10,0,100)
-        Status.BackgroundTransparency = 1
-        Status.Font = Enum.Font.Code
-        Status.Text = ""
-        Status.TextSize = 14
-        Status.TextXAlignment = Enum.TextXAlignment.Left
-        Status.TextColor3 = Color3.fromRGB(255,80,80)
+        -- Info label (owner / tier / expiry shown after success)
+        local InfoLabel = Instance.new("TextLabel", WinInline)
+        InfoLabel.Size = UDim2.new(1,-20,0,30)
+        InfoLabel.Position = UDim2.new(0,10,0,90)
+        InfoLabel.BackgroundTransparency = 1
+        InfoLabel.FontFace = Library.Fonts.Types.Smallest_Pixel
+        InfoLabel.Text = ""
+        InfoLabel.TextColor3 = Color3.fromRGB(119,120,255)
+        InfoLabel.TextSize = 9
+        InfoLabel.TextStrokeTransparency = 0
+        InfoLabel.TextXAlignment = Enum.TextXAlignment.Left
+        InfoLabel.TextYAlignment = Enum.TextYAlignment.Top
+        InfoLabel.ZIndex = 3
 
-        local Button = Instance.new("TextButton")
-        Button.Parent = Main
-        Button.Size = UDim2.new(1,-20,0,35)
-        Button.Position = UDim2.new(0,10,1,-50)
-        Button.BackgroundColor3 = Color3.fromRGB(119,120,255)
-        Button.Text = "Authenticate"
-        Button.Font = Enum.Font.Code
-        Button.TextColor3 = Color3.new(1,1,1)
-        Button.TextSize = 16
-        Button.BorderSizePixel = 0
-        Button.AutoButtonColor = false
+        -- Note label
+        local NoteLabel = Instance.new("TextLabel", WinInline)
+        NoteLabel.Size = UDim2.new(1,-20,0,12)
+        NoteLabel.Position = UDim2.new(0,10,1,-26)
+        NoteLabel.BackgroundTransparency = 1
+        NoteLabel.FontFace = Library.Fonts.Types.Smallest_Pixel
+        NoteLabel.Text = KeySystem.Config.Note
+        NoteLabel.TextColor3 = Color3.fromRGB(60,60,60)
+        NoteLabel.TextSize = 9
+        NoteLabel.TextStrokeTransparency = 0
+        NoteLabel.ZIndex = 3
 
-        local BtnCorner = Instance.new("UICorner")
-        BtnCorner.Parent = Button
+        -- Submit button
+        local BtnOutline = Instance.new("Frame", WinInline)
+        BtnOutline.Size = UDim2.new(1,-20,0,16)
+        BtnOutline.Position = UDim2.new(0,10,1,-46)
+        BtnOutline.BackgroundColor3 = Color3.fromRGB(119,120,255)
+        BtnOutline.BorderSizePixel = 0
+        BtnOutline.ZIndex = 3
+
+        local BtnInline = Instance.new("TextButton", BtnOutline)
+        BtnInline.Size = UDim2.new(1,-2,1,-2)
+        BtnInline.Position = UDim2.new(0,1,0,1)
+        BtnInline.BackgroundColor3 = Color3.fromRGB(10,10,10)
+        BtnInline.BorderSizePixel = 0
+        BtnInline.FontFace = Library.Fonts.Types.Smallest_Pixel
+        BtnInline.Text = "Authenticate"
+        BtnInline.TextColor3 = Color3.fromRGB(255,255,255)
+        BtnInline.TextSize = 9
+        BtnInline.TextStrokeTransparency = 0
+        BtnInline.AutoButtonColor = false
+        BtnInline.ZIndex = 4
 
         if KeySystem.Config.SaveKey then
             local saved = loadSavedKey()
@@ -388,77 +469,77 @@ do
         local busy = false
 
         local function submit()
-            if busy then
-                return
-            end
+    if busy then
+        return
+    end
 
-            busy = true
+    busy = true
 
-            Button.Text = "Connecting..."
-            Status.Text = ""
+    BtnInline.Text = "Connecting..."  -- was: Button.Text
+    StatusLabel.Text = ""             -- was: Status.Text
 
-            local ok, data = validateKey(KeyBox.Text)
+    local ok, data = validateKey(KeyBox.Text)
 
-            if not ScreenGui.Parent then
-                return
-            end
+    if not ScreenGui.Parent then
+        return
+    end
 
-            if ok then
-                Status.TextColor3 = Color3.fromRGB(80,255,120)
+    if ok then
+        StatusLabel.TextColor3 = Color3.fromRGB(80, 255, 120)  -- was: Status.TextColor3
 
-                local timeLeft =
-                    (data.expires == 0)
-                    and "Lifetime"
-                    or secondsToHMS(data.expires - os.time())
+        local timeLeft =
+            (data.expires == 0)
+            and "Lifetime"
+            or secondsToHMS(data.expires - os.time())
 
-                Status.Text =
-                    "Authenticated | "
-                    .. (data.owner or "Unknown")
-                    .. " | "
-                    .. timeLeft
+        StatusLabel.Text =                                      -- was: Status.Text
+            "Authenticated | "
+            .. (data.owner or "Unknown")
+            .. " | "
+            .. timeLeft
 
-                Button.Text = "Loading..."
+        BtnInline.Text = "Loading..."                          -- was: Button.Text
 
-                if KeySystem.Config.SaveKey then
-                    saveKey(KeyBox.Text:gsub("%s+", ""):upper())
-                end
-
-                task.wait(1)
-
-                if ScreenGui.Parent then
-                    ScreenGui:Destroy()
-                end
-
-                if onSuccess then
-                    onSuccess(data)
-                end
-            else
-                Status.TextColor3 = Color3.fromRGB(255,80,80)
-                Status.Text = tostring(data)
-
-                Button.Text = "Authenticate"
-
-                busy = false
-            end
+        if KeySystem.Config.SaveKey then
+            saveKey(KeyBox.Text:gsub("%s+", ""):upper())
         end
 
-        Button.MouseButton1Click:Connect(function()
-            task.spawn(submit)
-        end)
+        task.wait(1)
 
-        KeyBox.FocusLost:Connect(function(enterPressed)
-            if enterPressed then
-                task.spawn(submit)
-            end
-        end)
+        if ScreenGui.Parent then
+            ScreenGui:Destroy()
+        end
 
-        Button.MouseEnter:Connect(function()
-            Button.BackgroundColor3 = Color3.fromRGB(140,141,255)
-        end)
+        if onSuccess then
+            onSuccess(data)
+        end
+    else
+        StatusLabel.TextColor3 = Color3.fromRGB(255, 80, 80)  -- was: Status.TextColor3
+        StatusLabel.Text = tostring(data)                      -- was: Status.Text
 
-        Button.MouseLeave:Connect(function()
-            Button.BackgroundColor3 = Color3.fromRGB(119,120,255)
-        end)
+        BtnInline.Text = "Authenticate"                        -- was: Button.Text
+
+        busy = false
+    end
+end
+
+BtnInline.MouseButton1Click:Connect(function()  -- was: Button.MouseButton1Click
+    task.spawn(submit)
+end)
+
+KeyBox.FocusLost:Connect(function(enterPressed)
+    if enterPressed then
+        task.spawn(submit)
+    end
+end)
+
+BtnInline.MouseEnter:Connect(function()         -- was: Button.MouseEnter
+    BtnInline.BackgroundColor3 = Color3.fromRGB(140, 141, 255)
+end)
+
+BtnInline.MouseLeave:Connect(function()         -- was: Button.MouseLeave
+    BtnInline.BackgroundColor3 = Color3.fromRGB(119, 120, 255)
+end)
     end
 end
 
