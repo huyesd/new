@@ -291,7 +291,7 @@ do
         local ScreenGui = Instance.new("ScreenGui", CoreGui)
         ScreenGui.Name = "KeySystem"
         ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
-        ScreenGui.DisplayOrder = 1000000
+        ScreenGui.DisplayOrder = 10000
         ScreenGui.IgnoreGuiInset = true
 
         -- Blur/dim backdrop
@@ -433,7 +433,7 @@ do
         NoteLabel.FontFace = Library.Fonts.Types.Smallest_Pixel
         NoteLabel.Text = KeySystem.Config.Note
         NoteLabel.TextColor3 = Color3.fromRGB(60,60,60)
-        NoteLabel.TextSize = 9
+        NoteLabel.TextScaled = true
         NoteLabel.TextStrokeTransparency = 0
         NoteLabel.ZIndex = 3
 
