@@ -148,23 +148,14 @@ do
         WsUrl = "ws://localhost:8080",
     }
 
-    -- // Helpers
-    local function secondsToHMS(s)
-        if s <= 0 then
-            return "Expired"
-        end
-
+local function secondsToHMS(s)
+        if s <= 0 then return "Expired" end
         local d = math.floor(s / 86400)
         local h = math.floor((s % 86400) / 3600)
         local m = math.floor((s % 3600) / 60)
-
-        if d > 0 then
-            return d .. "d " .. h .. "h " .. m .. "m"
-        elseif h > 0 then
-            return h .. "h " .. m .. "m"
-        else
-            return m .. "m " .. (s % 60) .. "s"
-        end
+        if d > 0 then return d .. "d " .. h .. "h " .. m .. "m"
+        elseif h > 0 then return h .. "h " .. m .. "m"
+        else return m .. "m " .. (s % 60) .. "s" end
     end
 
     local function ensureFolder()
@@ -179,18 +170,16 @@ do
     end
 
     local function loadSavedKey()
-        if not isfile(KeySystem.Config.FilePath) then
-            return nil
-        end
-
+        if not isfile(KeySystem.Config.FilePath) then return nil end
         local ok, val = pcall(readfile, KeySystem.Config.FilePath)
-
         if ok and type(val) == "string" and #val > 0 then
             return val
         end
-
         return nil
     end
+
+    -- // HWID
+    local hwid = (gethwid or get_hwid or get_user_identifier or function() return game:GetService("RbxAnalyticsService"):GetClientId() end)()
 
     -- // Key Validation
     local function validateKey(key)
@@ -216,29 +205,14 @@ do
         local response = nil
 
         ws.OnMessage:Connect(function(msg)
-            local ok, decoded = pcall(function()
-                return HttpService:JSONDecode(msg)
-            end)
-
-            if not ok or type(decoded) ~= "table" then
-                response = {
-                    valid = false,
-                    error = "Invalid server response."
-                }
-            else
-                response = decoded
-            end
-
+            local ok, decoded = pcall(HttpService.JSONDecode, HttpService, msg)
+            response = ok and decoded or {valid = false, error = "Invalid server response"}
             finished = true
         end)
 
         ws.OnClose:Connect(function()
             if not finished then
-                response = {
-                    valid = false,
-                    error = "Connection closed."
-                }
-
+                response = {valid = false, error = "Connection closed."}
                 finished = true
             end
         end)
@@ -246,29 +220,22 @@ do
 local hwid = (gethwid or get_hwid or get_user_identifier or function() return "UNKNOWN" end)()
 
 local sendOk = pcall(function()
-    ws:Send(HttpService:JSONEncode({
-        key  = key,
-        hwid = hwid,
-    }))
-end)
+            ws:Send(HttpService:JSONEncode({
+                key = key,
+                hwid = hwid,
+                action = "validate"   -- optional: let server know it's a validation request
+            }))
+        end)
 
         if not sendOk then
-            pcall(function()
-                ws:Close()
-            end)
-
-            return false, "Failed to send key."
+            pcall(function() ws:Close() end)
+            return false, "Failed to send data."
         end
 
         local start = tick()
+        repeat task.wait() until finished or tick() - start > 12
 
-        repeat
-            task.wait()
-        until finished or tick() - start > 10
-
-        pcall(function()
-            ws:Close()
-        end)
+        pcall(function() ws:Close() end)
 
         if not response then
             return false, "Server timeout."
@@ -278,10 +245,15 @@ end)
             return false, response.error or "Invalid key."
         end
 
+        -- HWID Check (server should return this)
+        if response.hwid_bound and response.hwid_bound ~= hwid then
+            return false, "This key is bound to another device.\nRequest a reset in Discord."
+        end
+
         response.expires = response.expires or 0
 
         if response.expires ~= 0 and os.time() > response.expires then
-            return false, "Key expired."
+            return false, "Key has expired."
         end
 
         return true, response
