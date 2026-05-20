@@ -150,13 +150,21 @@ do
 
     -- // Helpers
     local function secondsToHMS(s)
-        if s <= 0 then return "Expired" end
+        if s <= 0 then
+            return "Expired"
+        end
+
         local d = math.floor(s / 86400)
         local h = math.floor((s % 86400) / 3600)
         local m = math.floor((s % 3600) / 60)
-        if d > 0 then return d .. "d " .. h .. "h " .. m .. "m"
-        elseif h > 0 then return h .. "h " .. m .. "m"
-        else return m .. "m " .. (s % 60) .. "s" end
+
+        if d > 0 then
+            return d .. "d " .. h .. "h " .. m .. "m"
+        elseif h > 0 then
+            return h .. "h " .. m .. "m"
+        else
+            return m .. "m " .. (s % 60) .. "s"
+        end
     end
 
     local function ensureFolder()
@@ -171,16 +179,18 @@ do
     end
 
     local function loadSavedKey()
-        if not isfile(KeySystem.Config.FilePath) then return nil end
+        if not isfile(KeySystem.Config.FilePath) then
+            return nil
+        end
+
         local ok, val = pcall(readfile, KeySystem.Config.FilePath)
+
         if ok and type(val) == "string" and #val > 0 then
             return val
         end
+
         return nil
     end
-
-    -- // HWID
-    local hwid = (gethwid or get_hwid or get_user_identifier or function() return game:GetService("RbxAnalyticsService"):GetClientId() end)()
 
     -- // Key Validation
     local function validateKey(key)
@@ -206,36 +216,59 @@ do
         local response = nil
 
         ws.OnMessage:Connect(function(msg)
-            local ok, decoded = pcall(HttpService.JSONDecode, HttpService, msg)
-            response = ok and decoded or {valid = false, error = "Invalid server response"}
+            local ok, decoded = pcall(function()
+                return HttpService:JSONDecode(msg)
+            end)
+
+            if not ok or type(decoded) ~= "table" then
+                response = {
+                    valid = false,
+                    error = "Invalid server response."
+                }
+            else
+                response = decoded
+            end
+
             finished = true
         end)
 
         ws.OnClose:Connect(function()
             if not finished then
-                response = {valid = false, error = "Connection closed."}
+                response = {
+                    valid = false,
+                    error = "Connection closed."
+                }
+
                 finished = true
             end
         end)
 
-        -- Send key + HWID
-        local sendOk = pcall(function()
-            ws:Send(HttpService:JSONEncode({
-                key = key,
-                hwid = hwid,
-                action = "validate"   -- optional: let server know it's a validation request
-            }))
-        end)
+local hwid = (gethwid or get_hwid or get_user_identifier or function() return "UNKNOWN" end)()
+
+local sendOk = pcall(function()
+    ws:Send(HttpService:JSONEncode({
+        key  = key,
+        hwid = hwid,
+    }))
+end)
 
         if not sendOk then
-            pcall(function() ws:Close() end)
-            return false, "Failed to send data."
+            pcall(function()
+                ws:Close()
+            end)
+
+            return false, "Failed to send key."
         end
 
         local start = tick()
-        repeat task.wait() until finished or tick() - start > 12
 
-        pcall(function() ws:Close() end)
+        repeat
+            task.wait()
+        until finished or tick() - start > 10
+
+        pcall(function()
+            ws:Close()
+        end)
 
         if not response then
             return false, "Server timeout."
@@ -245,15 +278,10 @@ do
             return false, response.error or "Invalid key."
         end
 
-        -- HWID Check (server should return this)
-        if response.hwid_bound and response.hwid_bound ~= hwid then
-            return false, "This key is bound to another device.\nRequest a reset in Discord."
-        end
-
         response.expires = response.expires or 0
 
         if response.expires ~= 0 and os.time() > response.expires then
-            return false, "Key has expired."
+            return false, "Key expired."
         end
 
         return true, response
@@ -261,8 +289,9 @@ do
 
     -- // UI
     function KeySystem:Prompt(onSuccess)
-        local Gui = gethui and gethui() or game:GetService("CoreGui")
-        local CoreGui = cloneref and cloneref(game:GetService("CoreGui")) or game:GetService("CoreGui")
+        local Gui = gethui()
+
+        local CoreGui = cloneref(game:GetService("CoreGui"))
 
         local ScreenGui = Instance.new("ScreenGui", CoreGui)
         ScreenGui.Name = "KeySystem"
@@ -317,10 +346,10 @@ do
         TitleLabel.Size = UDim2.new(1,0,0,20)
         TitleLabel.Position = UDim2.new(0,0,0,4)
         TitleLabel.BackgroundTransparency = 1
-        TitleLabel.Font = Enum.Font.Code -- Fallback font if Library is missing
+        TitleLabel.FontFace = Library.Fonts.Types.Smallest_Pixel
         TitleLabel.Text = KeySystem.Config.Title
         TitleLabel.TextColor3 = Color3.fromRGB(255,255,255)
-        TitleLabel.TextSize = 12
+        TitleLabel.TextSize = 9
         TitleLabel.TextStrokeTransparency = 0
         TitleLabel.ZIndex = 3
 
@@ -329,10 +358,10 @@ do
         SubLabel.Size = UDim2.new(1,0,0,14)
         SubLabel.Position = UDim2.new(0,0,0,22)
         SubLabel.BackgroundTransparency = 1
-        SubLabel.Font = Enum.Font.Code
+        SubLabel.FontFace = Library.Fonts.Types.Smallest_Pixel
         SubLabel.Text = KeySystem.Config.Subtitle
         SubLabel.TextColor3 = Color3.fromRGB(145,145,145)
-        SubLabel.TextSize = 11
+        SubLabel.TextSize = 9
         SubLabel.TextStrokeTransparency = 0
         SubLabel.ZIndex = 3
 
@@ -346,7 +375,7 @@ do
 
         -- Key input outline
         local BoxOutline = Instance.new("Frame", WinInline)
-        BoxOutline.Size = UDim2.new(1,-20,0,22)
+        BoxOutline.Size = UDim2.new(1,-20,0,18)
         BoxOutline.Position = UDim2.new(0,10,0,52)
         BoxOutline.BackgroundColor3 = Color3.fromRGB(17,17,17)
         BoxOutline.BorderSizePixel = 0
@@ -363,12 +392,12 @@ do
         KeyBox.Size = UDim2.new(1,-8,1,0)
         KeyBox.Position = UDim2.new(0,4,0,0)
         KeyBox.BackgroundTransparency = 1
-        KeyBox.Font = Enum.Font.Code
+        KeyBox.FontFace = Library.Fonts.Types.Smallest_Pixel
         KeyBox.PlaceholderText = "XXXX-XXXX-XXXX"
         KeyBox.PlaceholderColor3 = Color3.fromRGB(60,60,60)
         KeyBox.Text = ""
         KeyBox.TextColor3 = Color3.fromRGB(255,255,255)
-        KeyBox.TextSize = 11
+        KeyBox.TextSize = 9
         KeyBox.TextStrokeTransparency = 0
         KeyBox.TextXAlignment = Enum.TextXAlignment.Left
         KeyBox.ClearTextOnFocus = false
@@ -377,12 +406,12 @@ do
         -- Status label
         local StatusLabel = Instance.new("TextLabel", WinInline)
         StatusLabel.Size = UDim2.new(1,-20,0,12)
-        StatusLabel.Position = UDim2.new(0,10,0,78)
+        StatusLabel.Position = UDim2.new(0,10,0,74)
         StatusLabel.BackgroundTransparency = 1
-        StatusLabel.Font = Enum.Font.Code
+        StatusLabel.FontFace = Library.Fonts.Types.Smallest_Pixel
         StatusLabel.Text = ""
         StatusLabel.TextColor3 = Color3.fromRGB(255,80,80)
-        StatusLabel.TextSize = 11
+        StatusLabel.TextSize = 9
         StatusLabel.TextStrokeTransparency = 0
         StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
         StatusLabel.ZIndex = 3
@@ -390,12 +419,12 @@ do
         -- Info label (owner / tier / expiry shown after success)
         local InfoLabel = Instance.new("TextLabel", WinInline)
         InfoLabel.Size = UDim2.new(1,-20,0,30)
-        InfoLabel.Position = UDim2.new(0,10,0,94)
+        InfoLabel.Position = UDim2.new(0,10,0,90)
         InfoLabel.BackgroundTransparency = 1
-        InfoLabel.Font = Enum.Font.Code
+        InfoLabel.FontFace = Library.Fonts.Types.Smallest_Pixel
         InfoLabel.Text = ""
         InfoLabel.TextColor3 = Color3.fromRGB(119,120,255)
-        InfoLabel.TextSize = 11
+        InfoLabel.TextSize = 9
         InfoLabel.TextStrokeTransparency = 0
         InfoLabel.TextXAlignment = Enum.TextXAlignment.Left
         InfoLabel.TextYAlignment = Enum.TextYAlignment.Top
@@ -406,7 +435,7 @@ do
         NoteLabel.Size = UDim2.new(1,-20,0,12)
         NoteLabel.Position = UDim2.new(0,10,1,-26)
         NoteLabel.BackgroundTransparency = 1
-        NoteLabel.Font = Enum.Font.Code
+        NoteLabel.FontFace = Library.Fonts.Types.Smallest_Pixel
         NoteLabel.Text = KeySystem.Config.Note
         NoteLabel.TextColor3 = Color3.fromRGB(60,60,60)
         NoteLabel.TextScaled = true
@@ -415,8 +444,8 @@ do
 
         -- Submit button
         local BtnOutline = Instance.new("Frame", WinInline)
-        BtnOutline.Size = UDim2.new(1,-20,0,20)
-        BtnOutline.Position = UDim2.new(0,10,1,-52)
+        BtnOutline.Size = UDim2.new(1,-20,0,16)
+        BtnOutline.Position = UDim2.new(0,10,1,-46)
         BtnOutline.BackgroundColor3 = Color3.fromRGB(119,120,255)
         BtnOutline.BorderSizePixel = 0
         BtnOutline.ZIndex = 3
@@ -426,16 +455,17 @@ do
         BtnInline.Position = UDim2.new(0,1,0,1)
         BtnInline.BackgroundColor3 = Color3.fromRGB(10,10,10)
         BtnInline.BorderSizePixel = 0
-        BtnInline.Font = Enum.Font.Code
+        BtnInline.FontFace = Library.Fonts.Types.Smallest_Pixel
         BtnInline.Text = "Authenticate"
         BtnInline.TextColor3 = Color3.fromRGB(255,255,255)
-        BtnInline.TextSize = 11
+        BtnInline.TextSize = 9
         BtnInline.TextStrokeTransparency = 0
         BtnInline.AutoButtonColor = false
         BtnInline.ZIndex = 4
 
         if KeySystem.Config.SaveKey then
             local saved = loadSavedKey()
+
             if saved then
                 KeyBox.Text = saved
             end
@@ -444,61 +474,82 @@ do
         local busy = false
 
         local function submit()
-            if busy then return end
-            busy = true
-            BtnInline.Text = "Connecting..."
-            StatusLabel.Text = ""
+    if busy then
+        return
+    end
 
-            local ok, data = validateKey(KeyBox.Text)
+    busy = true
 
-            if not ScreenGui.Parent then return end
+    BtnInline.Text = "Connecting..."  -- was: Button.Text
+    StatusLabel.Text = ""             -- was: Status.Text
 
-            if ok then
-                StatusLabel.TextColor3 = Color3.fromRGB(80, 255, 120)
-                StatusLabel.Text = "Authenticated ✓"
+    local ok, data = validateKey(KeyBox.Text)
 
-                local timeLeft = (data.expires == 0) and "Lifetime" or secondsToHMS(data.expires - os.time())
-                local displayHwid = hwid:sub(1, 20) .. "..."
-                
-                InfoLabel.Text = "Owner: " .. (data.owner or "Unknown") .. "\nHWID: " .. displayHwid .. "\nExpires: " .. timeLeft
-                BtnInline.Text = "Loading..."
+    if not ScreenGui.Parent then
+        return
+    end
 
-                if KeySystem.Config.SaveKey then
-                    saveKey(KeyBox.Text:gsub("%s+", ""):upper())
-                end
+if ok then
+    StatusLabel.TextColor3 = Color3.fromRGB(80, 255, 120)
+    StatusLabel.Text = "Authenticated"
 
-                task.wait(1.8)
-                if ScreenGui.Parent then ScreenGui:Destroy() end
-                if onSuccess then onSuccess(data) end
-            else
-                StatusLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
-                StatusLabel.Text = tostring(data)
-                BtnInline.Text = "Authenticate"
-                busy = false
-            end
-        end
+    local timeLeft =
+        (data.expires == 0)
+        and "Lifetime"
+        or secondsToHMS(data.expires - os.time())
 
-        BtnInline.MouseButton1Click:Connect(function() 
-            task.spawn(submit)
-        end)
+    -- Show owner, HWID, and time in the InfoLabel
+    local hwid = (gethwid or get_hwid or get_user_identifier or function() return "UNKNOWN" end)()
+    InfoLabel.Text =
+        "Owner: " .. (data.owner or "Unknown") .. "\n"
+        .. "HWID: " .. hwid:sub(1, 16) .. "...\n"  -- truncated for display
+        .. "Expires: " .. timeLeft
 
-        KeyBox.FocusLost:Connect(function(enterPressed)
-            if enterPressed then
-                task.spawn(submit)
-            end
-        end)
+    BtnInline.Text = "Loading..."
 
-        BtnInline.MouseEnter:Connect(function()
-            BtnInline.BackgroundColor3 = Color3.fromRGB(140, 141, 255)
-        end)
+    if KeySystem.Config.SaveKey then
+        saveKey(KeyBox.Text:gsub("%s+", ""):upper())
+    end
 
-        BtnInline.MouseLeave:Connect(function()
-            BtnInline.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
-        end)
+    task.wait(1.5)  -- slightly longer so the info is readable
+
+    if ScreenGui.Parent then
+        ScreenGui:Destroy()
+    end
+
+    if onSuccess then
+        onSuccess(data)
+    end
+    else
+        StatusLabel.TextColor3 = Color3.fromRGB(255, 80, 80)  -- was: Status.TextColor3
+        StatusLabel.Text = tostring(data)                      -- was: Status.Text
+
+        BtnInline.Text = "Authenticate"                        -- was: Button.Text
+
+        busy = false
     end
 end
 
-return KeySystem
+BtnInline.MouseButton1Click:Connect(function()  -- was: Button.MouseButton1Click
+    task.spawn(submit)
+end)
+
+KeyBox.FocusLost:Connect(function(enterPressed)
+    if enterPressed then
+        task.spawn(submit)
+    end
+end)
+
+BtnInline.MouseEnter:Connect(function()         -- was: Button.MouseEnter
+    BtnInline.BackgroundColor3 = Color3.fromRGB(140, 141, 255)
+end)
+
+BtnInline.MouseLeave:Connect(function()         -- was: Button.MouseLeave
+    BtnInline.BackgroundColor3 = Color3.fromRGB(119, 120, 255)
+end)
+    end
+end
+
 -- cursor
 local gui = Instance.new("ScreenGui", CoreGui)
 gui.IgnoreGuiInset = true
