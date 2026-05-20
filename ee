@@ -145,7 +145,7 @@ do
         -- Replace with your REAL backend URL
         -- Example:
         -- wss://your-backend.up.railway.app
-        WsUrl = "ws://localhost:3000",
+        WsUrl = "ws://localhost:8080",
     }
 
     -- // Helpers
@@ -461,8 +461,6 @@ do
         end)
     end
 end
-
-return KeySystem
 
 -- cursor
 local gui = Instance.new("ScreenGui", CoreGui)
