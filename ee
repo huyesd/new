@@ -123,35 +123,48 @@ Library.Fonts.Types.Smallest_Pixel = Font.new(Library.Fonts.Menu:Register_Font("
 -- // Key System
 local KeySystem = {}
 do
-    local HttpService = game:GetService("HttpService") -- JSON only, no requests
+    local HttpService = game:GetService("HttpService")
+
+    -- // WebSocket compatibility
+    local Websocket =
+        (syn and syn.websocket)
+        or (websocket)
+        or (WebSocket)
 
     -- // Config
     KeySystem.Config = {
         Title    = "Authorization",
         Subtitle = "Enter your license key",
         Note     = "Keys can be purchased at discord.gg/yourserver",
-        SaveKey  = true,
-        Folder   = "YourScript",          -- workspace folder for saves
-        FilePath = "YourScript/key.txt",  -- saved key path
 
-        -- >> Replace with your WebSocket validation server 
-        -- Server should expect: plain key string
-        -- Server should respond with JSON:
-        --   { "valid": true,  "owner": "Alice", "tier": "Premium", "expires": 0 }
-        --   { "valid": false, "error": "Invalid key." }
-        WsUrl = "ws://localhost:3000",
+        SaveKey  = true,
+        Folder   = "YourScript",
+        FilePath = "YourScript/key.txt",
+
+        -- IMPORTANT:
+        -- Replace with your REAL backend URL
+        -- Example:
+        -- wss://your-backend.up.railway.app
+        WsUrl = "ws://localhost:8080",
     }
 
-    -- // Helpers ---------------------------------------------------------------
-
+    -- // Helpers
     local function secondsToHMS(s)
-        if s <= 0 then return "Expired" end
+        if s <= 0 then
+            return "Expired"
+        end
+
         local d = math.floor(s / 86400)
         local h = math.floor((s % 86400) / 3600)
         local m = math.floor((s % 3600) / 60)
-        if d > 0 then return d.."d "..h.."h "..m.."m"
-        elseif h > 0 then return h.."h "..m.."m"
-        else return m.."m "..(s % 60).."s" end
+
+        if d > 0 then
+            return d .. "d " .. h .. "h " .. m .. "m"
+        elseif h > 0 then
+            return h .. "h " .. m .. "m"
+        else
+            return m .. "m " .. (s % 60) .. "s"
+        end
     end
 
     local function ensureFolder()
@@ -166,345 +179,290 @@ do
     end
 
     local function loadSavedKey()
-        if not isfile(KeySystem.Config.FilePath) then return nil end
+        if not isfile(KeySystem.Config.FilePath) then
+            return nil
+        end
+
         local ok, val = pcall(readfile, KeySystem.Config.FilePath)
+
         if ok and type(val) == "string" and #val > 0 then
             return val
         end
+
         return nil
     end
 
-    -- // WebSocket key validation ----------------------------------------------
-    -- Connects to the WS server, sends the key, yields until a response arrives.
-    -- Returns: ok (bool), data (table) | errMsg (string)
+    -- // Key Validation
     local function validateKey(key)
         key = key:gsub("%s+", ""):upper()
-        if #key == 0 then return false, "Please enter a key." end
 
-        -- Open connection
-        local wsOk, ws = pcall(WebSocket.connect, KeySystem.Config.WsUrl)
+        if #key == 0 then
+            return false, "Please enter a key."
+        end
+
+        if not Websocket then
+            return false, "Executor does not support websockets."
+        end
+
+        local wsOk, ws = pcall(function()
+            return Websocket.connect(KeySystem.Config.WsUrl)
+        end)
+
         if not wsOk or not ws then
-            return false, "Could not reach validation server."
+            return false, "Failed to connect to validation server."
         end
 
-        -- We yield this coroutine until OnMessage or OnClose fires
-        local thread   = coroutine.running()
-        local result   = nil   -- will be set by the handler before resume
-        local resolved = false
-
-        local function resolve(ok, payload)
-            if resolved then return end
-            resolved = true
-            result = { ok = ok, payload = payload }
-            -- Resume the yielded validateKey coroutine
-            local resumeOk, err = coroutine.resume(thread)
-            if not resumeOk then
-                warn("[KeySystem] coroutine resume error:", err)
-            end
-        end
+        local finished = false
+        local response = nil
 
         ws.OnMessage:Connect(function(msg)
-            local decodeOk, decoded = pcall(HttpService.JSONDecode, HttpService, msg)
+            local ok, decoded = pcall(function()
+                return HttpService:JSONDecode(msg)
+            end)
 
-            if not decodeOk or type(decoded) ~= "table" then
-                resolve(false, "Invalid server response.")
-                return
+            if not ok or type(decoded) ~= "table" then
+                response = {
+                    valid = false,
+                    error = "Invalid server response."
+                }
+            else
+                response = decoded
             end
 
-            if not decoded.valid then
-                resolve(false, decoded.error or "Invalid key.")
-                return
-            end
-
-            -- Normalise expiry
-            decoded.expires = decoded.expires or 0
-            if decoded.expires ~= 0 and os.time() > decoded.expires then
-                resolve(false, "Key has expired.")
-                return
-            end
-
-            resolve(true, decoded)
+            finished = true
         end)
 
         ws.OnClose:Connect(function()
-            resolve(false, "Connection closed unexpectedly.")
+            if not finished then
+                response = {
+                    valid = false,
+                    error = "Connection closed."
+                }
+
+                finished = true
+            end
         end)
 
-        -- Send key then yield
-        local sendOk, sendErr = pcall(ws.Send, ws, key)
+        local sendOk = pcall(function()
+            ws:Send(key)
+        end)
+
         if not sendOk then
-            pcall(ws.Close, ws)
-            return false, "Failed to send key: "..(sendErr or "unknown error")
+            pcall(function()
+                ws:Close()
+            end)
+
+            return false, "Failed to send key."
         end
 
-        coroutine.yield()          -- woken by resolve()
+        local start = tick()
 
-        pcall(ws.Close, ws)        -- always clean up
+        repeat
+            task.wait()
+        until finished or tick() - start > 10
 
-        if not result then
-            return false, "No response received."
+        pcall(function()
+            ws:Close()
+        end)
+
+        if not response then
+            return false, "Server timeout."
         end
 
-        return result.ok, result.payload
+        if not response.valid then
+            return false, response.error or "Invalid key."
+        end
+
+        response.expires = response.expires or 0
+
+        if response.expires ~= 0 and os.time() > response.expires then
+            return false, "Key expired."
+        end
+
+        return true, response
     end
 
-    -- // Build Key UI ----------------------------------------------------------
+    -- // UI
     function KeySystem:Prompt(onSuccess)
-        -- gethui() is Potassium's hidden container; invisible to game detection
         local Gui = gethui()
 
-        local ScreenGui = Instance.new("ScreenGui", Gui)
+        local ScreenGui = Instance.new("ScreenGui")
         ScreenGui.Name = "KeySystem"
+        ScreenGui.Parent = Gui
         ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
-        ScreenGui.DisplayOrder = 10000
         ScreenGui.IgnoreGuiInset = true
         ScreenGui.ResetOnSpawn = false
 
-        -- Dim backdrop
-        local Backdrop = Instance.new("Frame", ScreenGui)
-        Backdrop.Size = UDim2.new(1, 0, 1, 0)
-        Backdrop.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-        Backdrop.BackgroundTransparency = 0.45
+        local Backdrop = Instance.new("Frame")
+        Backdrop.Parent = ScreenGui
+        Backdrop.Size = UDim2.new(1,0,1,0)
+        Backdrop.BackgroundColor3 = Color3.fromRGB(0,0,0)
+        Backdrop.BackgroundTransparency = 0.4
         Backdrop.BorderSizePixel = 0
-        Backdrop.ZIndex = 1
 
-        -- Window outline
-        local WinOutline = Instance.new("Frame", ScreenGui)
-        WinOutline.Size = UDim2.new(0, 320, 0, 180)
-        WinOutline.Position = UDim2.new(0.5, -160, 0.5, -90)
-        WinOutline.BackgroundColor3 = Color3.fromRGB(119, 120, 255)
-        WinOutline.BorderSizePixel = 0
-        WinOutline.ZIndex = 2
+        local Main = Instance.new("Frame")
+        Main.Parent = ScreenGui
+        Main.Size = UDim2.new(0,320,0,180)
+        Main.Position = UDim2.new(0.5,-160,0.5,-90)
+        Main.BackgroundColor3 = Color3.fromRGB(15,15,15)
+        Main.BorderSizePixel = 0
 
-        local WinInline = Instance.new("Frame", WinOutline)
-        WinInline.Size = UDim2.new(1, -2, 1, -2)
-        WinInline.Position = UDim2.new(0, 1, 0, 1)
-        WinInline.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
-        WinInline.BorderSizePixel = 0
-        WinInline.ZIndex = 2
+        local Stroke = Instance.new("UIStroke")
+        Stroke.Parent = Main
+        Stroke.Color = Color3.fromRGB(119,120,255)
+        Stroke.Thickness = 1
 
-        -- Accent bar
-        local AccentBar = Instance.new("Frame", WinInline)
-        AccentBar.Size = UDim2.new(1, 0, 0, 1)
-        AccentBar.BackgroundColor3 = Color3.fromRGB(119, 120, 255)
-        AccentBar.BorderSizePixel = 0
-        AccentBar.ZIndex = 3
+        local Corner = Instance.new("UICorner")
+        Corner.Parent = Main
 
-        local UIGrad = Instance.new("UIGradient", AccentBar)
-        UIGrad.Color = ColorSequence.new{
-            ColorSequenceKeypoint.new(0,   Color3.fromRGB(28, 31, 53)),
-            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 255, 255)),
-            ColorSequenceKeypoint.new(1,   Color3.fromRGB(28, 31, 53)),
-        }
-        UIGrad.Transparency = NumberSequence.new{
-            NumberSequenceKeypoint.new(0,   0.5),
-            NumberSequenceKeypoint.new(0.5, 0.2),
-            NumberSequenceKeypoint.new(1,   0.5),
-        }
+        local Title = Instance.new("TextLabel")
+        Title.Parent = Main
+        Title.Size = UDim2.new(1,0,0,25)
+        Title.Position = UDim2.new(0,0,0,8)
+        Title.BackgroundTransparency = 1
+        Title.Font = Enum.Font.Code
+        Title.Text = KeySystem.Config.Title
+        Title.TextSize = 18
+        Title.TextColor3 = Color3.new(1,1,1)
 
-        -- Title
-        local TitleLabel = Instance.new("TextLabel", WinInline)
-        TitleLabel.Size = UDim2.new(1, 0, 0, 20)
-        TitleLabel.Position = UDim2.new(0, 0, 0, 4)
-        TitleLabel.BackgroundTransparency = 1
-        TitleLabel.FontFace = Library.Fonts.Types.Smallest_Pixel
-        TitleLabel.Text = KeySystem.Config.Title
-        TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-        TitleLabel.TextSize = 9
-        TitleLabel.TextStrokeTransparency = 0
-        TitleLabel.ZIndex = 3
+        local Subtitle = Instance.new("TextLabel")
+        Subtitle.Parent = Main
+        Subtitle.Size = UDim2.new(1,0,0,20)
+        Subtitle.Position = UDim2.new(0,0,0,30)
+        Subtitle.BackgroundTransparency = 1
+        Subtitle.Font = Enum.Font.Code
+        Subtitle.Text = KeySystem.Config.Subtitle
+        Subtitle.TextSize = 14
+        Subtitle.TextColor3 = Color3.fromRGB(160,160,160)
 
-        -- Subtitle
-        local SubLabel = Instance.new("TextLabel", WinInline)
-        SubLabel.Size = UDim2.new(1, 0, 0, 14)
-        SubLabel.Position = UDim2.new(0, 0, 0, 22)
-        SubLabel.BackgroundTransparency = 1
-        SubLabel.FontFace = Library.Fonts.Types.Smallest_Pixel
-        SubLabel.Text = KeySystem.Config.Subtitle
-        SubLabel.TextColor3 = Color3.fromRGB(145, 145, 145)
-        SubLabel.TextSize = 9
-        SubLabel.TextStrokeTransparency = 0
-        SubLabel.ZIndex = 3
-
-        -- Divider
-        local Div = Instance.new("Frame", WinInline)
-        Div.Size = UDim2.new(1, -20, 0, 1)
-        Div.Position = UDim2.new(0, 10, 0, 40)
-        Div.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-        Div.BorderSizePixel = 0
-        Div.ZIndex = 3
-
-        -- Key input
-        local BoxOutline = Instance.new("Frame", WinInline)
-        BoxOutline.Size = UDim2.new(1, -20, 0, 18)
-        BoxOutline.Position = UDim2.new(0, 10, 0, 52)
-        BoxOutline.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
-        BoxOutline.BorderSizePixel = 0
-        BoxOutline.ZIndex = 3
-
-        local BoxInline = Instance.new("Frame", BoxOutline)
-        BoxInline.Size = UDim2.new(1, -2, 1, -2)
-        BoxInline.Position = UDim2.new(0, 1, 0, 1)
-        BoxInline.BackgroundColor3 = Color3.fromRGB(8, 8, 8)
-        BoxInline.BorderSizePixel = 0
-        BoxInline.ZIndex = 4
-
-        local KeyBox = Instance.new("TextBox", BoxInline)
-        KeyBox.Size = UDim2.new(1, -8, 1, 0)
-        KeyBox.Position = UDim2.new(0, 4, 0, 0)
-        KeyBox.BackgroundTransparency = 1
-        KeyBox.FontFace = Library.Fonts.Types.Smallest_Pixel
+        local KeyBox = Instance.new("TextBox")
+        KeyBox.Parent = Main
+        KeyBox.Size = UDim2.new(1,-20,0,35)
+        KeyBox.Position = UDim2.new(0,10,0,60)
+        KeyBox.BackgroundColor3 = Color3.fromRGB(25,25,25)
+        KeyBox.TextColor3 = Color3.new(1,1,1)
         KeyBox.PlaceholderText = "XXXX-XXXX-XXXX"
-        KeyBox.PlaceholderColor3 = Color3.fromRGB(60, 60, 60)
-        KeyBox.Text = ""
-        KeyBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-        KeyBox.TextSize = 9
-        KeyBox.TextStrokeTransparency = 0
-        KeyBox.TextXAlignment = Enum.TextXAlignment.Left
+        KeyBox.PlaceholderColor3 = Color3.fromRGB(120,120,120)
+        KeyBox.Font = Enum.Font.Code
+        KeyBox.TextSize = 16
         KeyBox.ClearTextOnFocus = false
-        KeyBox.ZIndex = 5
+        KeyBox.BorderSizePixel = 0
 
-        -- Status label
-        local StatusLabel = Instance.new("TextLabel", WinInline)
-        StatusLabel.Size = UDim2.new(1, -20, 0, 12)
-        StatusLabel.Position = UDim2.new(0, 10, 0, 74)
-        StatusLabel.BackgroundTransparency = 1
-        StatusLabel.FontFace = Library.Fonts.Types.Smallest_Pixel
-        StatusLabel.Text = ""
-        StatusLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
-        StatusLabel.TextSize = 9
-        StatusLabel.TextStrokeTransparency = 0
-        StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
-        StatusLabel.ZIndex = 3
+        local KeyCorner = Instance.new("UICorner")
+        KeyCorner.Parent = KeyBox
 
-        -- Info label
-        local InfoLabel = Instance.new("TextLabel", WinInline)
-        InfoLabel.Size = UDim2.new(1, -20, 0, 30)
-        InfoLabel.Position = UDim2.new(0, 10, 0, 90)
-        InfoLabel.BackgroundTransparency = 1
-        InfoLabel.FontFace = Library.Fonts.Types.Smallest_Pixel
-        InfoLabel.Text = ""
-        InfoLabel.TextColor3 = Color3.fromRGB(119, 120, 255)
-        InfoLabel.TextSize = 9
-        InfoLabel.TextStrokeTransparency = 0
-        InfoLabel.TextXAlignment = Enum.TextXAlignment.Left
-        InfoLabel.TextYAlignment = Enum.TextYAlignment.Top
-        InfoLabel.ZIndex = 3
+        local Status = Instance.new("TextLabel")
+        Status.Parent = Main
+        Status.Size = UDim2.new(1,-20,0,20)
+        Status.Position = UDim2.new(0,10,0,100)
+        Status.BackgroundTransparency = 1
+        Status.Font = Enum.Font.Code
+        Status.Text = ""
+        Status.TextSize = 14
+        Status.TextXAlignment = Enum.TextXAlignment.Left
+        Status.TextColor3 = Color3.fromRGB(255,80,80)
 
-        -- Note label
-        local NoteLabel = Instance.new("TextLabel", WinInline)
-        NoteLabel.Size = UDim2.new(1, -20, 0, 12)
-        NoteLabel.Position = UDim2.new(0, 10, 1, -26)
-        NoteLabel.BackgroundTransparency = 1
-        NoteLabel.FontFace = Library.Fonts.Types.Smallest_Pixel
-        NoteLabel.Text = KeySystem.Config.Note
-        NoteLabel.TextColor3 = Color3.fromRGB(60, 60, 60)
-        NoteLabel.TextSize = 9
-        NoteLabel.TextStrokeTransparency = 0
-        NoteLabel.ZIndex = 3
+        local Button = Instance.new("TextButton")
+        Button.Parent = Main
+        Button.Size = UDim2.new(1,-20,0,35)
+        Button.Position = UDim2.new(0,10,1,-50)
+        Button.BackgroundColor3 = Color3.fromRGB(119,120,255)
+        Button.Text = "Authenticate"
+        Button.Font = Enum.Font.Code
+        Button.TextColor3 = Color3.new(1,1,1)
+        Button.TextSize = 16
+        Button.BorderSizePixel = 0
+        Button.AutoButtonColor = false
 
-        -- Submit button
-        local BtnOutline = Instance.new("Frame", WinInline)
-        BtnOutline.Size = UDim2.new(1, -20, 0, 16)
-        BtnOutline.Position = UDim2.new(0, 10, 1, -46)
-        BtnOutline.BackgroundColor3 = Color3.fromRGB(119, 120, 255)
-        BtnOutline.BorderSizePixel = 0
-        BtnOutline.ZIndex = 3
+        local BtnCorner = Instance.new("UICorner")
+        BtnCorner.Parent = Button
 
-        local BtnInline = Instance.new("TextButton", BtnOutline)
-        BtnInline.Size = UDim2.new(1, -2, 1, -2)
-        BtnInline.Position = UDim2.new(0, 1, 0, 1)
-        BtnInline.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
-        BtnInline.BorderSizePixel = 0
-        BtnInline.FontFace = Library.Fonts.Types.Smallest_Pixel
-        BtnInline.Text = "Authenticate"
-        BtnInline.TextColor3 = Color3.fromRGB(255, 255, 255)
-        BtnInline.TextSize = 9
-        BtnInline.TextStrokeTransparency = 0
-        BtnInline.AutoButtonColor = false
-        BtnInline.ZIndex = 4
-
-        -- // Pre-fill saved key
         if KeySystem.Config.SaveKey then
             local saved = loadSavedKey()
-            if saved then KeyBox.Text = saved end
+
+            if saved then
+                KeyBox.Text = saved
+            end
         end
 
-        -- // Submit logic
         local busy = false
 
-        local function trySubmit()
-            if busy then return end
+        local function submit()
+            if busy then
+                return
+            end
+
             busy = true
 
-            -- Lock UI
-            BtnInline.Text = "Connecting..."
-            StatusLabel.Text = ""
-            InfoLabel.Text = ""
-            KeyBox.TextEditable = false
+            Button.Text = "Connecting..."
+            Status.Text = ""
 
             local ok, data = validateKey(KeyBox.Text)
 
-            -- Guard: UI may have been destroyed during the WS round-trip
-            if not ScreenGui.Parent then return end
-
-            -- Unlock input regardless of outcome
-            KeyBox.TextEditable = true
+            if not ScreenGui.Parent then
+                return
+            end
 
             if ok then
-                local timeLeft = (data.expires == 0)
+                Status.TextColor3 = Color3.fromRGB(80,255,120)
+
+                local timeLeft =
+                    (data.expires == 0)
                     and "Lifetime"
                     or secondsToHMS(data.expires - os.time())
 
-                StatusLabel.TextColor3 = Color3.fromRGB(80, 255, 120)
-                StatusLabel.Text = "✓ Authenticated"
-                InfoLabel.Text = "Owner: "..(data.owner or "?")
-                    .."\nTier: "..(data.tier or "?").."  |  Time: "..timeLeft
-                BtnInline.Text = "Loading..."
+                Status.Text =
+                    "Authenticated | "
+                    .. (data.owner or "Unknown")
+                    .. " | "
+                    .. timeLeft
+
+                Button.Text = "Loading..."
 
                 if KeySystem.Config.SaveKey then
                     saveKey(KeyBox.Text:gsub("%s+", ""):upper())
                 end
 
-                task.wait(1.2)
-                if ScreenGui.Parent then ScreenGui:Destroy() end
-                onSuccess(data)
-            else
-                -- data is the error string on failure
-                StatusLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
-                StatusLabel.Text = "✗ "..tostring(data)
-                BtnInline.Text = "Authenticate"
-                BtnInline.TextColor3 = Color3.fromRGB(255, 80, 80)
+                task.wait(1)
 
-                task.delay(1.5, function()
-                    if ScreenGui.Parent then
-                        BtnInline.TextColor3 = Color3.fromRGB(255, 255, 255)
-                        StatusLabel.Text = ""
-                    end
-                end)
+                if ScreenGui.Parent then
+                    ScreenGui:Destroy()
+                end
+
+                if onSuccess then
+                    onSuccess(data)
+                end
+            else
+                Status.TextColor3 = Color3.fromRGB(255,80,80)
+                Status.Text = tostring(data)
+
+                Button.Text = "Authenticate"
 
                 busy = false
             end
         end
 
-        -- task.spawn so WebSocket yield doesn't block the RBXScriptSignal thread
-        BtnInline.MouseButton1Down:Connect(function()
-            task.spawn(trySubmit)
+        Button.MouseButton1Click:Connect(function()
+            task.spawn(submit)
         end)
 
-        KeyBox.FocusLost:Connect(function(enter)
-            if enter then task.spawn(trySubmit) end
+        KeyBox.FocusLost:Connect(function(enterPressed)
+            if enterPressed then
+                task.spawn(submit)
+            end
         end)
 
-        -- Hover glow
-        BtnInline.MouseEnter:Connect(function()
-            BtnOutline.BackgroundColor3 = Color3.fromRGB(150, 151, 255)
+        Button.MouseEnter:Connect(function()
+            Button.BackgroundColor3 = Color3.fromRGB(140,141,255)
         end)
-        BtnInline.MouseLeave:Connect(function()
-            BtnOutline.BackgroundColor3 = Color3.fromRGB(119, 120, 255)
+
+        Button.MouseLeave:Connect(function()
+            Button.BackgroundColor3 = Color3.fromRGB(119,120,255)
         end)
     end
 end
+
+return KeySystem
 
 -- cursor
 local gui = Instance.new("ScreenGui", CoreGui)
