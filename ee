@@ -135,7 +135,7 @@ do
     KeySystem.Config = {
         Title    = "Authorization",
         Subtitle = "Enter your license key",
-        Note     = "Keys can be purchased at discord.gg/yourserver",
+        Note     = "Keys can be purchased in discord",
 
         SaveKey  = true,
         Folder   = "YourScript",
@@ -243,9 +243,14 @@ do
             end
         end)
 
-        local sendOk = pcall(function()
-            ws:Send(key)
-        end)
+local hwid = (gethwid or get_hwid or get_user_identifier or function() return "UNKNOWN" end)()
+
+local sendOk = pcall(function()
+    ws:Send(HttpService:JSONEncode({
+        key  = key,
+        hwid = hwid,
+    }))
+end)
 
         if not sendOk then
             pcall(function()
@@ -484,35 +489,37 @@ do
         return
     end
 
-    if ok then
-        StatusLabel.TextColor3 = Color3.fromRGB(80, 255, 120)  -- was: Status.TextColor3
+if ok then
+    StatusLabel.TextColor3 = Color3.fromRGB(80, 255, 120)
+    StatusLabel.Text = "Authenticated"
 
-        local timeLeft =
-            (data.expires == 0)
-            and "Lifetime"
-            or secondsToHMS(data.expires - os.time())
+    local timeLeft =
+        (data.expires == 0)
+        and "Lifetime"
+        or secondsToHMS(data.expires - os.time())
 
-        StatusLabel.Text =                                      -- was: Status.Text
-            "Authenticated | "
-            .. (data.owner or "Unknown")
-            .. " | "
-            .. timeLeft
+    -- Show owner, HWID, and time in the InfoLabel
+    local hwid = (gethwid or get_hwid or get_user_identifier or function() return "UNKNOWN" end)()
+    InfoLabel.Text =
+        "Owner: " .. (data.owner or "Unknown") .. "\n"
+        .. "HWID: " .. hwid:sub(1, 16) .. "...\n"  -- truncated for display
+        .. "Expires: " .. timeLeft
 
-        BtnInline.Text = "Loading..."                          -- was: Button.Text
+    BtnInline.Text = "Loading..."
 
-        if KeySystem.Config.SaveKey then
-            saveKey(KeyBox.Text:gsub("%s+", ""):upper())
-        end
+    if KeySystem.Config.SaveKey then
+        saveKey(KeyBox.Text:gsub("%s+", ""):upper())
+    end
 
-        task.wait(1)
+    task.wait(1.5)  -- slightly longer so the info is readable
 
-        if ScreenGui.Parent then
-            ScreenGui:Destroy()
-        end
+    if ScreenGui.Parent then
+        ScreenGui:Destroy()
+    end
 
-        if onSuccess then
-            onSuccess(data)
-        end
+    if onSuccess then
+        onSuccess(data)
+    end
     else
         StatusLabel.TextColor3 = Color3.fromRGB(255, 80, 80)  -- was: Status.TextColor3
         StatusLabel.Text = tostring(data)                      -- was: Status.Text
@@ -546,7 +553,7 @@ end
 -- cursor
 local gui = Instance.new("ScreenGui", CoreGui)
 gui.IgnoreGuiInset = true
-gui.DisplayOrder = 999999
+gui.DisplayOrder = 9999999
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Global
 
 local cursor = Instance.new("ImageLabel", gui)
