@@ -139,7 +139,7 @@ do
         -- Server should respond with JSON:
         --   { "valid": true,  "owner": "Alice", "tier": "Premium", "expires": 0 }
         --   { "valid": false, "error": "Invalid key." }
-        WsUrl = "ws://localhost:8080",
+        WsUrl = "ws://localhost:3000",
     }
 
     -- // Helpers ---------------------------------------------------------------
@@ -256,7 +256,7 @@ do
         local ScreenGui = Instance.new("ScreenGui", Gui)
         ScreenGui.Name = "KeySystem"
         ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
-        ScreenGui.DisplayOrder = 1000000
+        ScreenGui.DisplayOrder = 10000
         ScreenGui.IgnoreGuiInset = true
         ScreenGui.ResetOnSpawn = false
 
